@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import type { IdbRecord } from '../../injected/idb-bridge'
 import '../../styles/globals.css'
 import { createStorageEntry } from '../../shared/storage-adapters/entry-utils'
 import {
@@ -18,12 +19,14 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { CookieEditorModal, type CookieEditorMode } from './components/CookieEditorModal'
 import { CookieFilters } from './components/CookieFilters'
 import { CookieTable } from './components/CookieTable'
+import { IndexedDbExplorer } from './components/IndexedDbExplorer'
 import { EntryDetail } from './components/EntryDetail'
 import { PanelHeader } from './components/PanelHeader'
 import { SearchBar } from './components/SearchBar'
 import { StorageTable } from './components/StorageTable'
 import { StorageTabs } from './components/StorageTabs'
 import type { ValueEditorMode } from './components/ValueEditorModal'
+import { useIndexedDb } from './hooks/useIndexedDb'
 import { useCookieStorage } from './hooks/useCookieStorage'
 import { useInspectedStorage } from './hooks/useInspectedStorage'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
@@ -57,19 +60,26 @@ function AppContent() {
   const [cookieEditorState, setCookieEditorState] = useState<CookieEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<StorageEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
+  const [idbDeleteTarget, setIdbDeleteTarget] = useState<IdbRecord | null>(null)
   const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
   const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
 
   const isCookies = activeTab === 'cookies'
+  const isIndexedDb = activeTab === 'indexeddb'
   const webStorage = useInspectedStorage(activeTab)
   const cookieStorage = useCookieStorage(isCookies)
+  const idbStorage = useIndexedDb(isIndexedDb)
 
   const entries = isCookies ? cookieStorage.entries : webStorage.entries
-  const location = isCookies ? cookieStorage.location : webStorage.location
-  const state = isCookies ? cookieStorage.state : webStorage.state
-  const error = isCookies ? cookieStorage.error : webStorage.error
-  const isMutating = isCookies ? cookieStorage.isMutating : webStorage.isMutating
-  const refresh = isCookies ? cookieStorage.refresh : webStorage.refresh
+  const location = isIndexedDb ? idbStorage.location : isCookies ? cookieStorage.location : webStorage.location
+  const state = isIndexedDb ? idbStorage.state : isCookies ? cookieStorage.state : webStorage.state
+  const error = isIndexedDb ? idbStorage.error : isCookies ? cookieStorage.error : webStorage.error
+  const isMutating = isIndexedDb
+    ? idbStorage.isMutating
+    : isCookies
+      ? cookieStorage.isMutating
+      : webStorage.isMutating
+  const refresh = isIndexedDb ? idbStorage.refresh : isCookies ? cookieStorage.refresh : webStorage.refresh
 
   const filteredEntries = useMemo(() => {
     const searched = filterEntries(entries, searchQuery)
@@ -81,17 +91,33 @@ function AppContent() {
 
   const existingKeys = useMemo(() => entries.map((entry) => entry.key), [entries])
 
-  const storageLabel = isCookies
-    ? 'Cookies for inspected page'
-    : activeTab === 'local'
-      ? 'Local Storage for inspected page'
-      : 'Session Storage for inspected page'
+  const storageLabel = isIndexedDb
+    ? 'IndexedDB for inspected page'
+    : isCookies
+      ? 'Cookies for inspected page'
+      : activeTab === 'local'
+        ? 'Local Storage for inspected page'
+        : 'Session Storage for inspected page'
 
-  const storageTypeLabel = isCookies
-    ? 'cookies'
-    : activeTab === 'local'
-      ? 'local storage'
-      : 'session storage'
+  const storageTypeLabel = isIndexedDb
+    ? 'IndexedDB'
+    : isCookies
+      ? 'cookies'
+      : activeTab === 'local'
+        ? 'local storage'
+        : 'session storage'
+
+  const headerEntryCount = isIndexedDb
+    ? idbStorage.selectedStore
+      ? idbStorage.totalRecords
+      : idbStorage.databases.length
+    : entries.length
+
+  const headerMatchCount = isIndexedDb
+    ? idbStorage.selectedStore
+      ? idbStorage.records.length
+      : idbStorage.databases.length
+    : filteredEntries.length
 
   useEffect(() => {
     if (!selectedEntry) return
@@ -111,6 +137,7 @@ function AppContent() {
     setCookieEditorState(null)
     setDeleteTarget(null)
     setClearOpen(false)
+    setIdbDeleteTarget(null)
     setCookieFilters(DEFAULT_COOKIE_FILTERS)
     setCookieSort(DEFAULT_COOKIE_SORT)
   }
@@ -199,6 +226,18 @@ function AppContent() {
     }
   }
 
+  const handleIdbDelete = async () => {
+    if (!idbDeleteTarget) return
+
+    try {
+      await idbStorage.deleteRecord(idbDeleteTarget)
+      showToast(`Deleted record "${idbDeleteTarget.key.display}"`, 'success')
+      setIdbDeleteTarget(null)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete IndexedDB record', 'error')
+    }
+  }
+
   const handleClearAll = async () => {
     try {
       if (isCookies) {
@@ -227,8 +266,8 @@ function AppContent() {
     >
       <PanelHeader
         location={location}
-        entryCount={entries.length}
-        matchCount={filteredEntries.length}
+        entryCount={headerEntryCount}
+        matchCount={headerMatchCount}
         searchQuery={searchQuery}
         storageLabel={storageLabel}
       />
@@ -252,22 +291,26 @@ function AppContent() {
       >
         <StorageTabs activeTab={activeTab} onChange={handleTabChange} isDark={isDark} />
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openAddEditor}
-            disabled={isMutating || state === 'loading'}
-            className={toolbarButtonClass}
-          >
-            {isCookies ? 'Add cookie' : 'Add key'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setClearOpen(true)}
-            disabled={isMutating || entries.length === 0}
-            className={`${toolbarButtonClass} hover:border-red-400 hover:text-red-300`}
-          >
-            Clear all
-          </button>
+          {!isIndexedDb && (
+            <>
+              <button
+                type="button"
+                onClick={openAddEditor}
+                disabled={isMutating || state === 'loading'}
+                className={toolbarButtonClass}
+              >
+                {isCookies ? 'Add cookie' : 'Add key'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setClearOpen(true)}
+                disabled={isMutating || entries.length === 0}
+                className={`${toolbarButtonClass} hover:border-red-400 hover:text-red-300`}
+              >
+                Clear all
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => void refresh()}
@@ -286,7 +329,15 @@ function AppContent() {
       )}
 
       <div className="flex min-h-0 flex-1">
-        {isCookies ? (
+        {isIndexedDb ? (
+          <IndexedDbExplorer
+            idb={idbStorage}
+            searchQuery={searchQuery}
+            theme={isDark ? 'dark' : 'light'}
+            isDark={isDark}
+            onDeleteRequest={setIdbDeleteTarget}
+          />
+        ) : isCookies ? (
           <CookieTable
             entries={filteredEntries}
             selectedId={selectedEntry?.id ?? null}
@@ -305,18 +356,20 @@ function AppContent() {
             onSelect={setSelectedEntry}
           />
         )}
-        <EntryDetail
-          entry={selectedEntry}
-          searchQuery={searchQuery}
-          theme={isDark ? 'dark' : 'light'}
-          isMutating={isMutating}
-          onClose={() => setSelectedEntry(null)}
-          onEdit={openEditEditor}
-          onDelete={setDeleteTarget}
-        />
+        {!isIndexedDb && (
+          <EntryDetail
+            entry={selectedEntry}
+            searchQuery={searchQuery}
+            theme={isDark ? 'dark' : 'light'}
+            isMutating={isMutating}
+            onClose={() => setSelectedEntry(null)}
+            onEdit={openEditEditor}
+            onDelete={setDeleteTarget}
+          />
+        )}
       </div>
 
-      {editorState && !isCookies && (
+      {editorState && !isCookies && !isIndexedDb && (
         <Suspense
           fallback={
             <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/50 text-sm text-white">
@@ -353,6 +406,17 @@ function AppContent() {
           onClose={() => setCookieEditorState(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={idbDeleteTarget !== null}
+        title="Delete IndexedDB record"
+        description={`Delete "${idbDeleteTarget?.key.display}" from ${idbDeleteTarget?.database} → ${idbDeleteTarget?.store}? This permanently modifies page storage and cannot be undone.`}
+        confirmLabel="Delete record"
+        isDark={isDark}
+        destructive
+        onCancel={() => setIdbDeleteTarget(null)}
+        onConfirm={() => void handleIdbDelete()}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

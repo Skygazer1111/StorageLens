@@ -2,7 +2,7 @@ import type { CookieData } from '../messaging/types'
 
 export type StorageValueType = 'json' | 'string' | 'jwt-candidate'
 
-export type StorageKind = 'local' | 'session' | 'cookies'
+export type StorageKind = 'local' | 'session' | 'cookies' | 'indexeddb'
 
 export type CookieSameSite = CookieData['sameSite']
 

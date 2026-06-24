@@ -13,7 +13,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 2 | JSON Tree Viewer & Search | ✅ Completed |
 | 3 | Edit, Add & Delete Values | ✅ Completed |
 | 4 | Cookies | ✅ Completed |
-| 5 | IndexedDB | ⬜ Not started |
+| 5 | IndexedDB | ✅ Completed |
 | 6 | JWT Decoder | ⬜ Not started |
 | 7 | Snapshots & Compare | ⬜ Not started |
 | 8 | Live Change Tracking | ⬜ Not started |
@@ -294,7 +294,9 @@ StorageLens/
 
 ---
 
-## Phase 5 — IndexedDB
+## Phase 5 — IndexedDB ✅
+
+**Status:** Completed
 
 **Goal:** Browse databases, object stores, and records.
 

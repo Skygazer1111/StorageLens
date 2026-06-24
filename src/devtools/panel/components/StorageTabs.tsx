@@ -10,6 +10,7 @@ const tabs: { id: StorageKind; label: string }[] = [
   { id: 'local', label: 'Local Storage' },
   { id: 'session', label: 'Session Storage' },
   { id: 'cookies', label: 'Cookies' },
+  { id: 'indexeddb', label: 'IndexedDB' },
 ]
 
 export function StorageTabs({ activeTab, isDark, onChange }: StorageTabsProps) {
