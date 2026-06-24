@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "@crxjs/vite-plugin": "^2.7.0",
+    "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-virtual": "^3.14.3",
     "@uiw/react-json-view": "^2.0.0-alpha.43",
     "@vitejs/plugin-react": "^6.0.3",
     "fuse.js": "^7.4.2",
+    "monaco-editor": "^0.55.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "vite": "^8.1.0"

@@ -57,3 +57,79 @@ export const READ_PAGE_LOCATION_SCRIPT = `
   }
 })()
 `
+
+export interface StorageWriteResult {
+  ok: true
+}
+
+export interface StorageWriteError {
+  ok: false
+  error: string
+}
+
+export type StorageWriteResponse = StorageWriteResult | StorageWriteError
+
+const writeStorageOperation = (
+  storageName: 'localStorage' | 'sessionStorage',
+  operation: 'setItem' | 'removeItem' | 'clear',
+  key?: string,
+  value?: string,
+) => {
+  if (operation === 'setItem') {
+    return `
+(function() {
+  try {
+    window[${JSON.stringify(storageName)}].setItem(${JSON.stringify(key)}, ${JSON.stringify(value)});
+    return JSON.stringify({ ok: true });
+  } catch (error) {
+    return JSON.stringify({ ok: false, error: String(error) });
+  }
+})()
+`
+  }
+
+  if (operation === 'removeItem') {
+    return `
+(function() {
+  try {
+    window[${JSON.stringify(storageName)}].removeItem(${JSON.stringify(key)});
+    return JSON.stringify({ ok: true });
+  } catch (error) {
+    return JSON.stringify({ ok: false, error: String(error) });
+  }
+})()
+`
+  }
+
+  return `
+(function() {
+  try {
+    window[${JSON.stringify(storageName)}].clear();
+    return JSON.stringify({ ok: true });
+  } catch (error) {
+    return JSON.stringify({ ok: false, error: String(error) });
+  }
+})()
+`
+}
+
+export function buildSetItemScript(
+  storageName: 'localStorage' | 'sessionStorage',
+  key: string,
+  value: string,
+): string {
+  return writeStorageOperation(storageName, 'setItem', key, value)
+}
+
+export function buildRemoveItemScript(
+  storageName: 'localStorage' | 'sessionStorage',
+  key: string,
+): string {
+  return writeStorageOperation(storageName, 'removeItem', key)
+}
+
+export function buildClearStorageScript(
+  storageName: 'localStorage' | 'sessionStorage',
+): string {
+  return writeStorageOperation(storageName, 'clear')
+}

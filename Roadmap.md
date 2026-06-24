@@ -11,7 +11,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 0 | Project Foundation | ✅ Completed |
 | 1 | LocalStorage & SessionStorage Reader | ✅ Completed |
 | 2 | JSON Tree Viewer & Search | ✅ Completed |
-| 3 | Edit, Add & Delete Values | ⬜ Not started |
+| 3 | Edit, Add & Delete Values | ✅ Completed |
 | 4 | Cookies | ⬜ Not started |
 | 5 | IndexedDB | ⬜ Not started |
 | 6 | JWT Decoder | ⬜ Not started |
@@ -238,7 +238,9 @@ StorageLens/
 
 ---
 
-## Phase 3 — Edit, Add & Delete Values
+## Phase 3 — Edit, Add & Delete Values ✅
+
+**Status:** Completed
 
 **Goal:** In-panel CRUD for LocalStorage and SessionStorage.
 

@@ -8,10 +8,21 @@ interface EntryDetailProps {
   entry: StorageEntry | null
   searchQuery: string
   theme: ThemeMode
+  isMutating?: boolean
   onClose: () => void
+  onEdit: (entry: StorageEntry) => void
+  onDelete: (entry: StorageEntry) => void
 }
 
-export function EntryDetail({ entry, searchQuery, theme, onClose }: EntryDetailProps) {
+export function EntryDetail({
+  entry,
+  searchQuery,
+  theme,
+  isMutating = false,
+  onClose,
+  onEdit,
+  onDelete,
+}: EntryDetailProps) {
   const isDark = theme === 'dark'
 
   if (!entry) {
@@ -26,6 +37,12 @@ export function EntryDetail({ entry, searchQuery, theme, onClose }: EntryDetailP
     )
   }
 
+  const actionClass = `rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+    isDark
+      ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
+      : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
+  }`
+
   return (
     <aside
       className={`flex w-96 shrink-0 flex-col border-l ${
@@ -38,13 +55,31 @@ export function EntryDetail({ entry, searchQuery, theme, onClose }: EntryDetailP
         }`}
       >
         <h2 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Value</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          className={`text-xs ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-slate-500 hover:text-slate-800'}`}
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={isMutating}
+            onClick={() => onEdit(entry)}
+            className={actionClass}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            disabled={isMutating}
+            onClick={() => onDelete(entry)}
+            className="rounded-md border border-red-500/40 px-2 py-1 text-xs text-red-300 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`text-xs ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            Close
+          </button>
+        </div>
       </div>
 
       <div
