@@ -51,6 +51,7 @@ export function normalizeStorageItem(item: RawStorageItem): StorageEntry {
     byteSize: item.byteSize,
     valueType,
     parsed,
+    id: item.key,
   }
 }
 

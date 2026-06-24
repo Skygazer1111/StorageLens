@@ -58,7 +58,13 @@ export function buildSearchIndex(entries: StorageEntry[]): SearchIndexItem[] {
   return entries.map((entry) => ({
     key: entry.key,
     value: entry.value,
-    pathsText: buildPathsText(entry),
+    pathsText: [
+      buildPathsText(entry),
+      entry.cookie?.domain ?? '',
+      entry.cookie?.path ?? '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
     entry,
   }))
 }

@@ -9,7 +9,7 @@ import { HighlightText } from './HighlightText'
 
 interface StorageTableProps {
   entries: StorageEntry[]
-  selectedKey: string | null
+  selectedId: string | null
   searchQuery: string
   isDark: boolean
   onSelect: (entry: StorageEntry) => void
@@ -45,7 +45,7 @@ function ValueTypeBadge({
 
 export function StorageTable({
   entries,
-  selectedKey,
+  selectedId,
   searchQuery,
   isDark,
   onSelect,
@@ -90,11 +90,11 @@ export function StorageTable({
       <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const entry = entries[virtualRow.index]
-          const selected = selectedKey === entry.key
+          const selected = selectedId === entry.id
 
           return (
             <div
-              key={entry.key}
+              key={entry.id}
               role="row"
               tabIndex={0}
               onClick={() => onSelect(entry)}

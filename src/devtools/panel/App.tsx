@@ -1,15 +1,30 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import '../../styles/globals.css'
 import { createStorageEntry } from '../../shared/storage-adapters/entry-utils'
+import {
+  filterCookieEntries,
+  sortCookieEntries,
+} from '../../shared/storage-adapters/cookie-utils'
 import { filterEntries } from '../../shared/search/storage-search'
-import type { StorageEntry, StorageKind } from '../../shared/storage-adapters/types'
+import type {
+  CookieFilterState,
+  CookieSortField,
+  CookieSortState,
+  StorageEntry,
+  StorageKind,
+} from '../../shared/storage-adapters/types'
+import { DEFAULT_COOKIE_FILTERS, DEFAULT_COOKIE_SORT } from '../../shared/storage-adapters/types'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { CookieEditorModal, type CookieEditorMode } from './components/CookieEditorModal'
+import { CookieFilters } from './components/CookieFilters'
+import { CookieTable } from './components/CookieTable'
 import { EntryDetail } from './components/EntryDetail'
 import { PanelHeader } from './components/PanelHeader'
 import { SearchBar } from './components/SearchBar'
 import { StorageTable } from './components/StorageTable'
 import { StorageTabs } from './components/StorageTabs'
 import type { ValueEditorMode } from './components/ValueEditorModal'
+import { useCookieStorage } from './hooks/useCookieStorage'
 import { useInspectedStorage } from './hooks/useInspectedStorage'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
@@ -27,6 +42,11 @@ interface EditorState {
   keyDisabled: boolean
 }
 
+interface CookieEditorState {
+  mode: CookieEditorMode
+  entry?: StorageEntry | null
+}
+
 function AppContent() {
   const { isDark } = useTheme()
   const { showToast } = useToast()
@@ -34,36 +54,48 @@ function AppContent() {
   const [selectedEntry, setSelectedEntry] = useState<StorageEntry | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [editorState, setEditorState] = useState<EditorState | null>(null)
-  const [deleteKey, setDeleteKey] = useState<string | null>(null)
+  const [cookieEditorState, setCookieEditorState] = useState<CookieEditorState | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<StorageEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
+  const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
+  const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
 
-  const {
-    entries,
-    location,
-    state,
-    error,
-    isMutating,
-    refresh,
-    saveItem,
-    deleteItem,
-    clearAll,
-  } = useInspectedStorage(activeTab)
+  const isCookies = activeTab === 'cookies'
+  const webStorage = useInspectedStorage(activeTab)
+  const cookieStorage = useCookieStorage(isCookies)
 
-  const filteredEntries = useMemo(
-    () => filterEntries(entries, searchQuery),
-    [entries, searchQuery],
-  )
+  const entries = isCookies ? cookieStorage.entries : webStorage.entries
+  const location = isCookies ? cookieStorage.location : webStorage.location
+  const state = isCookies ? cookieStorage.state : webStorage.state
+  const error = isCookies ? cookieStorage.error : webStorage.error
+  const isMutating = isCookies ? cookieStorage.isMutating : webStorage.isMutating
+  const refresh = isCookies ? cookieStorage.refresh : webStorage.refresh
+
+  const filteredEntries = useMemo(() => {
+    const searched = filterEntries(entries, searchQuery)
+    if (!isCookies) return searched
+
+    const filtered = filterCookieEntries(searched, cookieFilters)
+    return sortCookieEntries(filtered, cookieSort)
+  }, [cookieFilters, cookieSort, entries, isCookies, searchQuery])
 
   const existingKeys = useMemo(() => entries.map((entry) => entry.key), [entries])
 
-  const storageLabel =
-    activeTab === 'local' ? 'Local Storage for inspected page' : 'Session Storage for inspected page'
+  const storageLabel = isCookies
+    ? 'Cookies for inspected page'
+    : activeTab === 'local'
+      ? 'Local Storage for inspected page'
+      : 'Session Storage for inspected page'
 
-  const storageTypeLabel = activeTab === 'local' ? 'local storage' : 'session storage'
+  const storageTypeLabel = isCookies
+    ? 'cookies'
+    : activeTab === 'local'
+      ? 'local storage'
+      : 'session storage'
 
   useEffect(() => {
     if (!selectedEntry) return
-    const updated = entries.find((entry) => entry.key === selectedEntry.key)
+    const updated = entries.find((entry) => entry.id === selectedEntry.id)
     if (updated) {
       setSelectedEntry(updated)
     } else {
@@ -76,11 +108,26 @@ function AppContent() {
     setSelectedEntry(null)
     setSearchQuery('')
     setEditorState(null)
-    setDeleteKey(null)
+    setCookieEditorState(null)
+    setDeleteTarget(null)
     setClearOpen(false)
+    setCookieFilters(DEFAULT_COOKIE_FILTERS)
+    setCookieSort(DEFAULT_COOKIE_SORT)
+  }
+
+  const handleCookieSort = (field: CookieSortField) => {
+    setCookieSort((current) => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+    }))
   }
 
   const openAddEditor = () => {
+    if (isCookies) {
+      setCookieEditorState({ mode: 'add' })
+      return
+    }
+
     setEditorState({
       mode: 'add',
       key: '',
@@ -90,6 +137,11 @@ function AppContent() {
   }
 
   const openEditEditor = (entry: StorageEntry) => {
+    if (isCookies) {
+      setCookieEditorState({ mode: 'edit', entry })
+      return
+    }
+
     setEditorState({
       mode: 'edit',
       key: entry.key,
@@ -100,7 +152,7 @@ function AppContent() {
 
   const handleSave = async (key: string, value: string) => {
     try {
-      await saveItem(key, value)
+      await webStorage.saveItem(key, value)
       showToast(`Saved "${key}"`, 'success')
       setSelectedEntry(createStorageEntry(key, value))
     } catch (err) {
@@ -109,16 +161,39 @@ function AppContent() {
     }
   }
 
+  const handleCookieSave = async (cookie: Parameters<typeof cookieStorage.saveCookie>[0]) => {
+    try {
+      await cookieStorage.saveCookie(cookie)
+      showToast(`Saved cookie "${cookie.name}"`, 'success')
+      const saved = entries.find(
+        (entry) =>
+          entry.key === cookie.name &&
+          entry.cookie?.domain === cookie.domain &&
+          entry.cookie?.path === cookie.path,
+      )
+      if (saved) setSelectedEntry(saved)
+      void refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save cookie', 'error')
+      throw err
+    }
+  }
+
   const handleDelete = async () => {
-    if (!deleteKey) return
+    if (!deleteTarget) return
 
     try {
-      await deleteItem(deleteKey)
-      showToast(`Deleted "${deleteKey}"`, 'success')
-      if (selectedEntry?.key === deleteKey) {
+      if (isCookies) {
+        await cookieStorage.deleteCookie(deleteTarget)
+      } else {
+        await webStorage.deleteItem(deleteTarget.id)
+      }
+
+      showToast(`Deleted "${deleteTarget.key}"`, 'success')
+      if (selectedEntry?.id === deleteTarget.id) {
         setSelectedEntry(null)
       }
-      setDeleteKey(null)
+      setDeleteTarget(null)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to delete entry', 'error')
     }
@@ -126,7 +201,12 @@ function AppContent() {
 
   const handleClearAll = async () => {
     try {
-      await clearAll()
+      if (isCookies) {
+        await cookieStorage.clearAll()
+      } else {
+        await webStorage.clearAll()
+      }
+
       showToast(`Cleared all ${storageTypeLabel}`, 'success')
       setSelectedEntry(null)
       setClearOpen(false)
@@ -161,6 +241,10 @@ function AppContent() {
         isDark={isDark}
       />
 
+      {isCookies && (
+        <CookieFilters filters={cookieFilters} isDark={isDark} onChange={setCookieFilters} />
+      )}
+
       <div
         className={`flex items-center justify-between gap-3 border-b px-4 py-2 ${
           isDark ? 'border-surface-border' : 'border-slate-200'
@@ -174,7 +258,7 @@ function AppContent() {
             disabled={isMutating || state === 'loading'}
             className={toolbarButtonClass}
           >
-            Add key
+            {isCookies ? 'Add cookie' : 'Add key'}
           </button>
           <button
             type="button"
@@ -202,13 +286,25 @@ function AppContent() {
       )}
 
       <div className="flex min-h-0 flex-1">
-        <StorageTable
-          entries={filteredEntries}
-          selectedKey={selectedEntry?.key ?? null}
-          searchQuery={searchQuery}
-          isDark={isDark}
-          onSelect={setSelectedEntry}
-        />
+        {isCookies ? (
+          <CookieTable
+            entries={filteredEntries}
+            selectedId={selectedEntry?.id ?? null}
+            searchQuery={searchQuery}
+            sort={cookieSort}
+            isDark={isDark}
+            onSelect={setSelectedEntry}
+            onSort={handleCookieSort}
+          />
+        ) : (
+          <StorageTable
+            entries={filteredEntries}
+            selectedId={selectedEntry?.id ?? null}
+            searchQuery={searchQuery}
+            isDark={isDark}
+            onSelect={setSelectedEntry}
+          />
+        )}
         <EntryDetail
           entry={selectedEntry}
           searchQuery={searchQuery}
@@ -216,11 +312,11 @@ function AppContent() {
           isMutating={isMutating}
           onClose={() => setSelectedEntry(null)}
           onEdit={openEditEditor}
-          onDelete={(entry) => setDeleteKey(entry.key)}
+          onDelete={setDeleteTarget}
         />
       </div>
 
-      {editorState && (
+      {editorState && !isCookies && (
         <Suspense
           fallback={
             <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/50 text-sm text-white">
@@ -244,20 +340,34 @@ function AppContent() {
         </Suspense>
       )}
 
+      {cookieEditorState && isCookies && (
+        <CookieEditorModal
+          open
+          mode={cookieEditorState.mode}
+          pageUrl={location?.href ?? 'https://localhost/'}
+          initialEntry={cookieEditorState.entry}
+          existingEntries={entries}
+          isSaving={isMutating}
+          isDark={isDark}
+          onSave={handleCookieSave}
+          onClose={() => setCookieEditorState(null)}
+        />
+      )}
+
       <ConfirmDialog
-        open={deleteKey !== null}
-        title="Delete entry"
-        description={`Delete "${deleteKey}" from ${storageTypeLabel}? This cannot be undone.`}
+        open={deleteTarget !== null}
+        title={isCookies ? 'Delete cookie' : 'Delete entry'}
+        description={`Delete "${deleteTarget?.key}" from ${storageTypeLabel}? This cannot be undone.`}
         confirmLabel="Delete"
         isDark={isDark}
         destructive
-        onCancel={() => setDeleteKey(null)}
+        onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
       />
 
       <ConfirmDialog
         open={clearOpen}
-        title="Clear all storage"
+        title={isCookies ? 'Clear all cookies' : 'Clear all storage'}
         description={`Remove every entry from ${storageTypeLabel} on this origin. This cannot be undone.`}
         confirmLabel="Clear all"
         confirmText="CLEAR"

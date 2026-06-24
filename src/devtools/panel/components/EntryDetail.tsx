@@ -1,4 +1,5 @@
 import type { StorageEntry } from '../../../shared/storage-adapters/types'
+import { formatCookieExpiry } from '../../../shared/storage-adapters/cookie-utils'
 import { formatByteSize } from '../../../shared/storage-adapters/parse-value'
 import type { ThemeMode } from '../hooks/useTheme'
 import { CopyActions } from './CopyActions'
@@ -24,6 +25,7 @@ export function EntryDetail({
   onDelete,
 }: EntryDetailProps) {
   const isDark = theme === 'dark'
+  const isCookie = Boolean(entry?.cookie)
 
   if (!entry) {
     return (
@@ -43,6 +45,8 @@ export function EntryDetail({
       : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
   }`
 
+  const expiry = entry.cookie ? formatCookieExpiry(entry.cookie) : null
+
   return (
     <aside
       className={`flex w-96 shrink-0 flex-col border-l ${
@@ -54,7 +58,9 @@ export function EntryDetail({
           isDark ? 'border-surface-border' : 'border-slate-200'
         }`}
       >
-        <h2 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Value</h2>
+        <h2 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          {isCookie ? 'Cookie' : 'Value'}
+        </h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -88,11 +94,50 @@ export function EntryDetail({
         }`}
       >
         <div>
-          <p className="mb-1 uppercase tracking-wide">Key</p>
+          <p className="mb-1 uppercase tracking-wide">{isCookie ? 'Name' : 'Key'}</p>
           <p className={`break-all font-mono ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
             {entry.key}
           </p>
         </div>
+
+        {entry.cookie && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="mb-1 uppercase tracking-wide">Domain</p>
+                <p className={`break-all font-mono ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
+                  {entry.cookie.domain}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 uppercase tracking-wide">Path</p>
+                <p className={`font-mono ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
+                  {entry.cookie.path}
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="mb-1 uppercase tracking-wide">Expires</p>
+              <p className={isDark ? 'text-gray-200' : 'text-slate-800'}>{expiry?.relative}</p>
+              <p className="mt-0.5 text-[11px]">{expiry?.absolute}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {entry.cookie.secure && (
+                <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-emerald-300">Secure</span>
+              )}
+              {entry.cookie.httpOnly && (
+                <span className="rounded bg-sky-500/20 px-2 py-0.5 text-sky-300">HttpOnly</span>
+              )}
+              {entry.cookie.session && (
+                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-300">Session</span>
+              )}
+              <span className="rounded bg-gray-500/20 px-2 py-0.5 text-gray-300">
+                SameSite: {entry.cookie.sameSite}
+              </span>
+            </div>
+          </>
+        )}
+
         <div className="flex gap-4">
           <div>
             <p className="mb-1 uppercase tracking-wide">Type</p>

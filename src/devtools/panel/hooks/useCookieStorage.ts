@@ -1,21 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
 import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import type { CookieData } from '../../../shared/messaging/types'
 import {
-  readLocalStorage,
-  readSessionStorage,
-} from '../../../shared/storage-adapters/local-storage-adapter'
-import {
-  createStorageEntry,
-  removeStorageEntry,
-  upsertStorageEntry,
-} from '../../../shared/storage-adapters/entry-utils'
-import {
-  clearStorage,
-  removeStorageItem,
-  setStorageItem,
-} from '../../../shared/storage-adapters/write-adapter'
-import type { StorageEntry, StorageKind } from '../../../shared/storage-adapters/types'
+  clearCookies,
+  readCookies,
+  removeCookieEntry,
+  setCookie,
+} from '../../../shared/storage-adapters/cookie-adapter'
+import { mapCookieToEntry } from '../../../shared/storage-adapters/cookie-utils'
+import { upsertStorageEntry, removeStorageEntry } from '../../../shared/storage-adapters/entry-utils'
+import type { StorageEntry } from '../../../shared/storage-adapters/types'
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error'
 
@@ -42,12 +37,7 @@ async function readPageLocation(): Promise<PageLocation> {
   return { href: response.href, origin: response.origin }
 }
 
-async function readStorageForKind(kind: StorageKind): Promise<StorageEntry[]> {
-  return kind === 'local' ? readLocalStorage() : readSessionStorage()
-}
-
-export function useInspectedStorage(activeTab: StorageKind) {
-  const isWebStorage = activeTab === 'local' || activeTab === 'session'
+export function useCookieStorage(enabled: boolean) {
   const [entries, setEntries] = useState<StorageEntry[]>([])
   const [location, setLocation] = useState<PageLocation | null>(null)
   const [state, setState] = useState<LoadState>('idle')
@@ -55,26 +45,23 @@ export function useInspectedStorage(activeTab: StorageKind) {
   const [isMutating, setIsMutating] = useState(false)
 
   const refresh = useCallback(async () => {
-    if (!isWebStorage) return
+    if (!enabled) return
 
     setState('loading')
     setError(null)
 
     try {
-      const [pageLocation, storageEntries] = await Promise.all([
-        readPageLocation(),
-        readStorageForKind(activeTab),
-      ])
-
+      const pageLocation = await readPageLocation()
+      const cookies = await readCookies(pageLocation.href)
       setLocation(pageLocation)
-      setEntries(storageEntries)
+      setEntries(cookies)
       setState('success')
     } catch (err) {
       setState('error')
-      setError(err instanceof Error ? err.message : 'Failed to read storage')
+      setError(err instanceof Error ? err.message : 'Failed to read cookies')
       setEntries([])
     }
-  }, [activeTab, isWebStorage])
+  }, [enabled])
 
   const runMutation = useCallback(
     async (applyOptimistic: (current: StorageEntry[]) => StorageEntry[], action: () => Promise<void>) => {
@@ -92,7 +79,7 @@ export function useInspectedStorage(activeTab: StorageKind) {
         setState('success')
       } catch (err) {
         setEntries(snapshot)
-        const message = err instanceof Error ? err.message : 'Storage operation failed'
+        const message = err instanceof Error ? err.message : 'Cookie operation failed'
         setError(message)
         throw err
       } finally {
@@ -102,51 +89,74 @@ export function useInspectedStorage(activeTab: StorageKind) {
     [],
   )
 
-  const saveItem = useCallback(
-    async (key: string, value: string) => {
-      const trimmedKey = key.trim()
-      if (!trimmedKey) {
-        throw new Error('Key cannot be empty')
+  const saveCookie = useCallback(
+    async (cookie: CookieData) => {
+      if (!location?.href) {
+        throw new Error('Page URL is unavailable')
+      }
+
+      let savedEntry: StorageEntry | null = null
+
+      await runMutation(
+        (current) => upsertStorageEntry(current, mapCookieToEntry(cookie)),
+        async () => {
+          savedEntry = await setCookie(location.href, cookie)
+        },
+      )
+
+      if (savedEntry) {
+        setEntries((current) => upsertStorageEntry(current, savedEntry!))
+      }
+    },
+    [location, runMutation],
+  )
+
+  const deleteCookie = useCallback(
+    async (entry: StorageEntry) => {
+      if (!location?.href) {
+        throw new Error('Page URL is unavailable')
       }
 
       await runMutation(
-        (current) => upsertStorageEntry(current, createStorageEntry(trimmedKey, value)),
-        () => setStorageItem(activeTab, trimmedKey, value),
+        (current) => removeStorageEntry(current, entry.id),
+        () => removeCookieEntry(location.href, entry),
       )
     },
-    [activeTab, runMutation],
-  )
-
-  const deleteItem = useCallback(
-    async (id: string) => {
-      await runMutation(
-        (current) => removeStorageEntry(current, id),
-        () => removeStorageItem(activeTab, id),
-      )
-    },
-    [activeTab, runMutation],
+    [location, runMutation],
   )
 
   const clearAll = useCallback(async () => {
+    if (!location?.href) {
+      throw new Error('Page URL is unavailable')
+    }
+
+    const snapshot = entries
+
     await runMutation(
       () => [],
-      () => clearStorage(activeTab),
+      () => clearCookies(location.href, snapshot),
     )
-  }, [activeTab, runMutation])
+  }, [entries, location, runMutation])
 
-  const hasKey = useCallback((key: string) => entries.some((entry) => entry.key === key), [entries])
+  const hasCookieName = useCallback(
+    (name: string, domain: string, path: string) =>
+      entries.some(
+        (entry) => entry.key === name && entry.cookie?.domain === domain && entry.cookie?.path === path,
+      ),
+    [entries],
+  )
 
   useEffect(() => {
-    if (!isWebStorage) return
+    if (!enabled) return
     void refresh()
-  }, [refresh, isWebStorage])
+  }, [enabled, refresh])
 
   useEffect(() => {
-    if (!isWebStorage) return
+    if (!enabled) return
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [refresh, isWebStorage])
+  }, [enabled, refresh])
 
   return {
     entries,
@@ -155,9 +165,9 @@ export function useInspectedStorage(activeTab: StorageKind) {
     error,
     isMutating,
     refresh,
-    saveItem,
-    deleteItem,
+    saveCookie,
+    deleteCookie,
     clearAll,
-    hasKey,
+    hasCookieName,
   }
 }

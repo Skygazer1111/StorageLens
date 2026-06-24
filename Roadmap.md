@@ -12,7 +12,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 1 | LocalStorage & SessionStorage Reader | ✅ Completed |
 | 2 | JSON Tree Viewer & Search | ✅ Completed |
 | 3 | Edit, Add & Delete Values | ✅ Completed |
-| 4 | Cookies | ⬜ Not started |
+| 4 | Cookies | ✅ Completed |
 | 5 | IndexedDB | ⬜ Not started |
 | 6 | JWT Decoder | ⬜ Not started |
 | 7 | Snapshots & Compare | ⬜ Not started |
@@ -267,7 +267,9 @@ StorageLens/
 
 ---
 
-## Phase 4 — Cookies
+## Phase 4 — Cookies ✅
+
+**Status:** Completed
 
 **Goal:** Full cookie inspection and editing for the inspected origin.
 

@@ -9,6 +9,7 @@ interface StorageTabsProps {
 const tabs: { id: StorageKind; label: string }[] = [
   { id: 'local', label: 'Local Storage' },
   { id: 'session', label: 'Session Storage' },
+  { id: 'cookies', label: 'Cookies' },
 ]
 
 export function StorageTabs({ activeTab, isDark, onChange }: StorageTabsProps) {
