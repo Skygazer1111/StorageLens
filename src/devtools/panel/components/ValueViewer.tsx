@@ -4,6 +4,7 @@ import { splitByQuery } from '../../../shared/search/storage-search'
 import type { StorageEntry } from '../../../shared/storage-adapters/types'
 import type { ThemeMode } from '../hooks/useTheme'
 import { JsonTreeView } from './JsonTreeView'
+import { JwtPanel } from './JwtPanel'
 
 interface ValueViewerProps {
   entry: StorageEntry
@@ -71,14 +72,7 @@ export function ValueViewer({ entry, searchQuery, theme }: ValueViewerProps) {
     return () => window.clearTimeout(timer)
   }, [entry, parsed])
 
-  const jwtBadge = useMemo(() => {
-    if (entry.valueType !== 'jwt-candidate') return null
-    return (
-      <span className="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
-        JWT
-      </span>
-    )
-  }, [entry.valueType])
+  const isJwtCandidate = useMemo(() => entry.valueType === 'jwt-candidate', [entry.valueType])
 
   if (entry.valueType === 'json') {
     if (isParsing) {
@@ -109,7 +103,15 @@ export function ValueViewer({ entry, searchQuery, theme }: ValueViewerProps) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {jwtBadge && <div className="border-b border-surface-border px-4 py-2">{jwtBadge}</div>}
+      {isJwtCandidate && (
+        <JwtPanel
+          token={entry.value}
+          storageKey={entry.key}
+          searchQuery={searchQuery}
+          theme={theme}
+          defaultExpanded
+        />
+      )}
       <StringBlock value={entry.value} searchQuery={searchQuery} isDark={isDark} />
     </div>
   )

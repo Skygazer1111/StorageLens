@@ -14,7 +14,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 3 | Edit, Add & Delete Values | ✅ Completed |
 | 4 | Cookies | ✅ Completed |
 | 5 | IndexedDB | ✅ Completed |
-| 6 | JWT Decoder | ⬜ Not started |
+| 6 | JWT Decoder | ✅ Completed |
 | 7 | Snapshots & Compare | ⬜ Not started |
 | 8 | Live Change Tracking | ⬜ Not started |
 | 9 | Polish, Quality & Release | ⬜ Not started |
@@ -325,7 +325,9 @@ StorageLens/
 
 ---
 
-## Phase 6 — JWT Decoder
+## Phase 6 — JWT Decoder ✅
+
+**Status:** Completed
 
 **Goal:** One-click decode and inspect JWTs in storage values.
 
