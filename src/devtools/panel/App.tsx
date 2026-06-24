@@ -23,12 +23,14 @@ import { IndexedDbExplorer } from './components/IndexedDbExplorer'
 import { EntryDetail } from './components/EntryDetail'
 import { PanelHeader } from './components/PanelHeader'
 import { SearchBar } from './components/SearchBar'
+import { SnapshotModal } from './components/SnapshotModal'
 import { StorageTable } from './components/StorageTable'
 import { StorageTabs } from './components/StorageTabs'
 import type { ValueEditorMode } from './components/ValueEditorModal'
 import { useIndexedDb } from './hooks/useIndexedDb'
 import { useCookieStorage } from './hooks/useCookieStorage'
 import { useInspectedStorage } from './hooks/useInspectedStorage'
+import { useSnapshots } from './hooks/snapshots/useSnapshots'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
 
@@ -61,8 +63,10 @@ function AppContent() {
   const [deleteTarget, setDeleteTarget] = useState<StorageEntry | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
   const [idbDeleteTarget, setIdbDeleteTarget] = useState<IdbRecord | null>(null)
+  const [snapshotOpen, setSnapshotOpen] = useState(false)
   const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
   const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
+  const snapshots = useSnapshots()
 
   const isCookies = activeTab === 'cookies'
   const isIndexedDb = activeTab === 'indexeddb'
@@ -138,6 +142,7 @@ function AppContent() {
     setDeleteTarget(null)
     setClearOpen(false)
     setIdbDeleteTarget(null)
+    setSnapshotOpen(false)
     setCookieFilters(DEFAULT_COOKIE_FILTERS)
     setCookieSort(DEFAULT_COOKIE_SORT)
   }
@@ -291,6 +296,13 @@ function AppContent() {
       >
         <StorageTabs activeTab={activeTab} onChange={handleTabChange} isDark={isDark} />
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSnapshotOpen(true)}
+            className={toolbarButtonClass}
+          >
+            Snapshots
+          </button>
           {!isIndexedDb && (
             <>
               <button
@@ -406,6 +418,36 @@ function AppContent() {
           onClose={() => setCookieEditorState(null)}
         />
       )}
+
+      <SnapshotModal
+        open={snapshotOpen}
+        isDark={isDark}
+        snapshots={snapshots.snapshots}
+        totalApproxBytes={snapshots.totalApproxBytes}
+        isBusy={snapshots.isBusy}
+        onClose={() => setSnapshotOpen(false)}
+        onCapture={async (label) => {
+          await snapshots.captureSnapshot(label)
+          showToast('Snapshot captured', 'success')
+        }}
+        onDelete={(id) => {
+          snapshots.deleteSnapshot(id)
+          showToast('Snapshot deleted', 'info')
+        }}
+        onExport={(id) => {
+          snapshots.exportSnapshot(id)
+          showToast('Snapshot exported', 'success')
+        }}
+        onImport={async (file) => {
+          const imported = await snapshots.importSnapshots(file)
+          showToast(`Imported ${imported} snapshot${imported === 1 ? '' : 's'}`, 'success')
+        }}
+        onCompare={snapshots.compareSnapshots}
+        onCompareWithLive={async (snapshot) => {
+          const live = await snapshots.captureLiveSnapshot()
+          return snapshots.compareSnapshots(snapshot, live)
+        }}
+      />
 
       <ConfirmDialog
         open={idbDeleteTarget !== null}

@@ -15,7 +15,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 4 | Cookies | ✅ Completed |
 | 5 | IndexedDB | ✅ Completed |
 | 6 | JWT Decoder | ✅ Completed |
-| 7 | Snapshots & Compare | ⬜ Not started |
+| 7 | Snapshots & Compare | ✅ Completed |
 | 8 | Live Change Tracking | ⬜ Not started |
 | 9 | Polish, Quality & Release | ⬜ Not started |
 | 10 | Future Enhancements | ⬜ Post-v1 |
@@ -352,7 +352,9 @@ StorageLens/
 
 ---
 
-## Phase 7 — Snapshots & Compare
+## Phase 7 — Snapshots & Compare ✅
+
+**Status:** Completed
 
 **Goal:** Capture storage state at a point in time and diff against another snapshot.
 
