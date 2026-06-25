@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { readLocalStorage, readSessionStorage } from '../../../shared/storage-adapters/local-storage-adapter'
 import { readCookies } from '../../../shared/storage-adapters/cookie-adapter'
+import { readObjectStoreRecords } from '../../../shared/storage-adapters/idb-adapter'
+import { idbValuePreview } from '../../../shared/storage-adapters/idb-value'
 import type { StorageEntry } from '../../../shared/storage-adapters/types'
+import type { IdbRecord } from '../../../injected/idb-bridge'
 
-type LiveStorageKind = 'local' | 'session' | 'cookies'
+type LiveStorageKind = 'local' | 'session' | 'cookies' | 'indexeddb'
 type LiveChangeType = 'added' | 'updated' | 'removed'
 
 export interface LiveChangeEvent {
@@ -15,28 +18,37 @@ export interface LiveChangeEvent {
   entryId: string | null
   oldValue: string | null
   newValue: string | null
+  databaseName?: string
+  storeName?: string
 }
 
 interface UseLiveTrackingOptions {
   cookieUrl?: string | null
   enabled: boolean
+  idbSelection?: {
+    databaseName: string | null
+    storeName: string | null
+    enabled: boolean
+  }
 }
 
 interface LiveSnapshotState {
   local: StorageEntry[]
   session: StorageEntry[]
   cookies: StorageEntry[]
+  idbRecords: IdbRecord[]
 }
 
 const POLL_INTERVAL_MS = 1500
 const MAX_EVENTS = 150
+const IDB_LIVE_LIMIT = 200
 
 function toMap(entries: StorageEntry[]): Map<string, StorageEntry> {
   return new Map(entries.map((entry) => [entry.id, entry]))
 }
 
 function diffEntries(
-  storage: LiveStorageKind,
+  storage: Extract<LiveStorageKind, 'local' | 'session' | 'cookies'>,
   before: StorageEntry[],
   after: StorageEntry[],
   at: number,
@@ -92,7 +104,75 @@ function diffEntries(
   return events
 }
 
-export function useLiveTracking({ cookieUrl, enabled }: UseLiveTrackingOptions) {
+function idbValueSignature(record: IdbRecord): string {
+  return `${record.key.display}|${record.value.type}|${idbValuePreview(record.value)}`
+}
+
+function diffIdbEntries(
+  before: IdbRecord[],
+  after: IdbRecord[],
+  at: number,
+  databaseName: string,
+  storeName: string,
+): LiveChangeEvent[] {
+  const beforeMap = new Map(before.map((record) => [record.id, record]))
+  const afterMap = new Map(after.map((record) => [record.id, record]))
+  const events: LiveChangeEvent[] = []
+
+  for (const record of after) {
+    const prev = beforeMap.get(record.id)
+    if (!prev) {
+      events.push({
+        id: `${at}-indexeddb-added-${record.id}`,
+        timestamp: at,
+        storage: 'indexeddb',
+        changeType: 'added',
+        key: record.key.display,
+        entryId: record.id,
+        oldValue: null,
+        newValue: idbValuePreview(record.value),
+        databaseName,
+        storeName,
+      })
+      continue
+    }
+    if (idbValueSignature(prev) !== idbValueSignature(record)) {
+      events.push({
+        id: `${at}-indexeddb-updated-${record.id}`,
+        timestamp: at,
+        storage: 'indexeddb',
+        changeType: 'updated',
+        key: record.key.display,
+        entryId: record.id,
+        oldValue: idbValuePreview(prev.value),
+        newValue: idbValuePreview(record.value),
+        databaseName,
+        storeName,
+      })
+    }
+  }
+
+  for (const record of before) {
+    if (!afterMap.has(record.id)) {
+      events.push({
+        id: `${at}-indexeddb-removed-${record.id}`,
+        timestamp: at,
+        storage: 'indexeddb',
+        changeType: 'removed',
+        key: record.key.display,
+        entryId: null,
+        oldValue: idbValuePreview(record.value),
+        newValue: null,
+        databaseName,
+        storeName,
+      })
+    }
+  }
+
+  return events
+}
+
+export function useLiveTracking({ cookieUrl, enabled, idbSelection }: UseLiveTrackingOptions) {
   const [isPaused, setIsPaused] = useState(false)
   const [events, setEvents] = useState<LiveChangeEvent[]>([])
   const [unseenCount, setUnseenCount] = useState(0)
@@ -120,9 +200,21 @@ export function useLiveTracking({ cookieUrl, enabled }: UseLiveTrackingOptions) 
         readSessionStorage(),
         cookieUrl ? readCookies(cookieUrl) : Promise.resolve([] as StorageEntry[]),
       ])
+      const shouldTrackIdb =
+        Boolean(idbSelection?.enabled) && Boolean(idbSelection?.databaseName && idbSelection?.storeName)
+      const idbRecords = shouldTrackIdb
+        ? (
+            await readObjectStoreRecords(
+              idbSelection!.databaseName!,
+              idbSelection!.storeName!,
+              0,
+              IDB_LIVE_LIMIT,
+            )
+          ).records
+        : []
 
       const previous = snapshotRef.current
-      const nextSnapshot: LiveSnapshotState = { local, session, cookies }
+      const nextSnapshot: LiveSnapshotState = { local, session, cookies, idbRecords }
       snapshotRef.current = nextSnapshot
       setError(null)
 
@@ -132,13 +224,22 @@ export function useLiveTracking({ cookieUrl, enabled }: UseLiveTrackingOptions) 
         ...diffEntries('local', previous.local, local, at),
         ...diffEntries('session', previous.session, session, at),
         ...diffEntries('cookies', previous.cookies, cookies, at),
+        ...(shouldTrackIdb && idbSelection?.databaseName && idbSelection?.storeName
+          ? diffIdbEntries(
+              previous.idbRecords,
+              idbRecords,
+              at,
+              idbSelection.databaseName,
+              idbSelection.storeName,
+            )
+          : []),
       ])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Live tracking failed')
     } finally {
       setIsSyncing(false)
     }
-  }, [cookieUrl, enabled, isPaused, pushEvents])
+  }, [cookieUrl, enabled, idbSelection, isPaused, pushEvents])
 
   useEffect(() => {
     if (!enabled) {
@@ -194,6 +295,7 @@ export function useLiveTracking({ cookieUrl, enabled }: UseLiveTrackingOptions) 
       local: events.filter((event) => event.storage === 'local').length,
       session: events.filter((event) => event.storage === 'session').length,
       cookies: events.filter((event) => event.storage === 'cookies').length,
+      indexeddb: events.filter((event) => event.storage === 'indexeddb').length,
     }
   }, [events])
 

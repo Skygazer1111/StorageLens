@@ -17,7 +17,7 @@ A phase-by-phase guide to building StorageLens: a Chrome extension that turns br
 | 6 | JWT Decoder | ✅ Completed |
 | 7 | Snapshots & Compare | ✅ Completed |
 | 8 | Live Change Tracking | 🟨 In progress |
-| 9 | Polish, Quality & Release | ⬜ Not started |
+| 9 | Polish, Quality & Release | 🟨 In progress |
 | 10 | Future Enhancements | ⬜ Post-v1 |
 
 ---

@@ -68,6 +68,7 @@ function AppContent() {
   const [snapshotOpen, setSnapshotOpen] = useState(false)
   const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
   const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
+  const [liveIdbEnabled, setLiveIdbEnabled] = useState(false)
   const snapshots = useSnapshots()
 
   const isCookies = activeTab === 'cookies'
@@ -87,8 +88,13 @@ function AppContent() {
       : webStorage.isMutating
   const refresh = isIndexedDb ? idbStorage.refresh : isCookies ? cookieStorage.refresh : webStorage.refresh
   const liveTracking = useLiveTracking({
-    enabled: !isIndexedDb,
+    enabled: true,
     cookieUrl: cookieStorage.location?.href ?? webStorage.location?.href ?? null,
+    idbSelection: {
+      enabled: liveIdbEnabled,
+      databaseName: idbStorage.selectedDatabase,
+      storeName: idbStorage.selectedStore,
+    },
   })
 
   const filteredEntries = useMemo(() => {
@@ -162,6 +168,13 @@ function AppContent() {
 
   const handleLiveEventClick = (event: LiveChangeEvent) => {
     setSearchQuery(event.key)
+    if (event.storage === 'indexeddb' && event.databaseName && event.storeName) {
+      void idbStorage.selectStore(event.databaseName, event.storeName)
+      setSelectedEntry(null)
+      setActiveTab('indexeddb')
+      return
+    }
+
     if (event.storage === activeTab && event.entryId) {
       const matched = entries.find((entry) => entry.id === event.entryId || entry.key === event.key) ?? null
       setSelectedEntry(matched)
@@ -319,6 +332,7 @@ function AppContent() {
             local: liveTracking.summary.local,
             session: liveTracking.summary.session,
             cookies: liveTracking.summary.cookies,
+            indexeddb: liveTracking.summary.indexeddb,
           }}
         />
         <div className="flex items-center gap-2">
@@ -407,17 +421,17 @@ function AppContent() {
         )}
       </div>
 
-      {!isIndexedDb && (
-        <LiveActivityFeed
-          events={liveTracking.events}
-          unseenCount={liveTracking.unseenCount}
-          isPaused={liveTracking.isPaused}
-          isSyncing={liveTracking.isSyncing}
-          isDark={isDark}
-          onPauseToggle={() => liveTracking.setPaused(!liveTracking.isPaused)}
-          onEventClick={handleLiveEventClick}
-        />
-      )}
+      <LiveActivityFeed
+        events={liveTracking.events}
+        unseenCount={liveTracking.unseenCount}
+        isPaused={liveTracking.isPaused}
+        isSyncing={liveTracking.isSyncing}
+        liveIdbEnabled={liveIdbEnabled}
+        isDark={isDark}
+        onPauseToggle={() => liveTracking.setPaused(!liveTracking.isPaused)}
+        onLiveIdbToggle={() => setLiveIdbEnabled((current) => !current)}
+        onEventClick={handleLiveEventClick}
+      />
 
       {editorState && !isCookies && !isIndexedDb && (
         <Suspense

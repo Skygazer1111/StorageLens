@@ -5,8 +5,10 @@ interface LiveActivityFeedProps {
   unseenCount: number
   isPaused: boolean
   isSyncing: boolean
+  liveIdbEnabled: boolean
   isDark: boolean
   onPauseToggle: () => void
+  onLiveIdbToggle: () => void
   onEventClick: (event: LiveChangeEvent) => void
 }
 
@@ -24,8 +26,10 @@ export function LiveActivityFeed({
   unseenCount,
   isPaused,
   isSyncing,
+  liveIdbEnabled,
   isDark,
   onPauseToggle,
+  onLiveIdbToggle,
   onEventClick,
 }: LiveActivityFeedProps) {
   return (
@@ -48,17 +52,32 @@ export function LiveActivityFeed({
             {isSyncing ? 'Syncing...' : 'Watching'}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onPauseToggle}
-          className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-            isDark
-              ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
-              : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
-          }`}
-        >
-          {isPaused ? 'Resume' : 'Pause'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onLiveIdbToggle}
+            className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+              liveIdbEnabled
+                ? 'border-accent text-accent'
+                : isDark
+                  ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
+                  : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
+            }`}
+          >
+            Live IDB {liveIdbEnabled ? 'On' : 'Off'}
+          </button>
+          <button
+            type="button"
+            onClick={onPauseToggle}
+            className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+              isDark
+                ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
+                : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
+            }`}
+          >
+            {isPaused ? 'Resume' : 'Pause'}
+          </button>
+        </div>
       </div>
       <div className="max-h-52 overflow-y-auto px-4 py-2">
         {events.length === 0 ? (
