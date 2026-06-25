@@ -18,6 +18,7 @@ import { DEFAULT_COOKIE_FILTERS, DEFAULT_COOKIE_SORT } from '../../shared/storag
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { CookieEditorModal, type CookieEditorMode } from './components/CookieEditorModal'
 import { CookieFilters } from './components/CookieFilters'
+import { LiveActivityFeed } from './components/LiveActivityFeed'
 import { CookieTable } from './components/CookieTable'
 import { IndexedDbExplorer } from './components/IndexedDbExplorer'
 import { EntryDetail } from './components/EntryDetail'
@@ -30,6 +31,7 @@ import type { ValueEditorMode } from './components/ValueEditorModal'
 import { useIndexedDb } from './hooks/useIndexedDb'
 import { useCookieStorage } from './hooks/useCookieStorage'
 import { useInspectedStorage } from './hooks/useInspectedStorage'
+import { useLiveTracking, type LiveChangeEvent } from './hooks/useLiveTracking'
 import { useSnapshots } from './hooks/snapshots/useSnapshots'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
@@ -84,6 +86,10 @@ function AppContent() {
       ? cookieStorage.isMutating
       : webStorage.isMutating
   const refresh = isIndexedDb ? idbStorage.refresh : isCookies ? cookieStorage.refresh : webStorage.refresh
+  const liveTracking = useLiveTracking({
+    enabled: !isIndexedDb,
+    cookieUrl: cookieStorage.location?.href ?? webStorage.location?.href ?? null,
+  })
 
   const filteredEntries = useMemo(() => {
     const searched = filterEntries(entries, searchQuery)
@@ -152,6 +158,17 @@ function AppContent() {
       field,
       direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
     }))
+  }
+
+  const handleLiveEventClick = (event: LiveChangeEvent) => {
+    setSearchQuery(event.key)
+    if (event.storage === activeTab && event.entryId) {
+      const matched = entries.find((entry) => entry.id === event.entryId || entry.key === event.key) ?? null
+      setSelectedEntry(matched)
+    } else {
+      setSelectedEntry(null)
+    }
+    setActiveTab(event.storage)
   }
 
   const openAddEditor = () => {
@@ -294,7 +311,16 @@ function AppContent() {
           isDark ? 'border-surface-border' : 'border-slate-200'
         }`}
       >
-        <StorageTabs activeTab={activeTab} onChange={handleTabChange} isDark={isDark} />
+        <StorageTabs
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          isDark={isDark}
+          badges={{
+            local: liveTracking.summary.local,
+            session: liveTracking.summary.session,
+            cookies: liveTracking.summary.cookies,
+          }}
+        />
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -380,6 +406,18 @@ function AppContent() {
           />
         )}
       </div>
+
+      {!isIndexedDb && (
+        <LiveActivityFeed
+          events={liveTracking.events}
+          unseenCount={liveTracking.unseenCount}
+          isPaused={liveTracking.isPaused}
+          isSyncing={liveTracking.isSyncing}
+          isDark={isDark}
+          onPauseToggle={() => liveTracking.setPaused(!liveTracking.isPaused)}
+          onEventClick={handleLiveEventClick}
+        />
+      )}
 
       {editorState && !isCookies && !isIndexedDb && (
         <Suspense
