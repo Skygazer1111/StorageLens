@@ -25,6 +25,7 @@ export interface LiveChangeEvent {
 interface UseLiveTrackingOptions {
   cookieUrl?: string | null
   enabled: boolean
+  pollIntervalMs?: number
   idbSelection?: {
     databaseName: string | null
     storeName: string | null
@@ -39,8 +40,8 @@ interface LiveSnapshotState {
   idbRecords: IdbRecord[]
 }
 
-const POLL_INTERVAL_MS = 1500
 const MAX_EVENTS = 150
+const DEFAULT_POLL_INTERVAL_MS = 1500
 const IDB_LIVE_LIMIT = 200
 
 function toMap(entries: StorageEntry[]): Map<string, StorageEntry> {
@@ -172,7 +173,7 @@ function diffIdbEntries(
   return events
 }
 
-export function useLiveTracking({ cookieUrl, enabled, idbSelection }: UseLiveTrackingOptions) {
+export function useLiveTracking({ cookieUrl, enabled, pollIntervalMs, idbSelection }: UseLiveTrackingOptions) {
   const [isPaused, setIsPaused] = useState(false)
   const [events, setEvents] = useState<LiveChangeEvent[]>([])
   const [unseenCount, setUnseenCount] = useState(0)
@@ -249,11 +250,12 @@ export function useLiveTracking({ cookieUrl, enabled, idbSelection }: UseLiveTra
 
   useEffect(() => {
     if (!enabled || isPaused) return
+    const interval = pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS
     const timer = window.setInterval(() => {
       void syncNow()
-    }, POLL_INTERVAL_MS)
+    }, interval)
     return () => window.clearInterval(timer)
-  }, [enabled, isPaused, syncNow])
+  }, [enabled, isPaused, pollIntervalMs, syncNow])
 
   useEffect(() => {
     const onFocus = () => {

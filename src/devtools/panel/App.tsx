@@ -35,6 +35,7 @@ import { useLiveTracking, type LiveChangeEvent } from './hooks/useLiveTracking'
 import { useSnapshots } from './hooks/snapshots/useSnapshots'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
+import { useExtensionSettings } from '../../shared/hooks/useExtensionSettings'
 
 const ValueEditorModal = lazy(() =>
   import('./components/ValueEditorModal').then((module) => ({
@@ -68,7 +69,7 @@ function AppContent() {
   const [snapshotOpen, setSnapshotOpen] = useState(false)
   const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
   const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
-  const [liveIdbEnabled, setLiveIdbEnabled] = useState(false)
+  const { settings: extensionSettings, updateSettings } = useExtensionSettings()
   const snapshots = useSnapshots()
 
   const isCookies = activeTab === 'cookies'
@@ -88,10 +89,11 @@ function AppContent() {
       : webStorage.isMutating
   const refresh = isIndexedDb ? idbStorage.refresh : isCookies ? cookieStorage.refresh : webStorage.refresh
   const liveTracking = useLiveTracking({
-    enabled: true,
+    enabled: Boolean(extensionSettings?.enabled && extensionSettings.liveTrackingEnabled),
     cookieUrl: cookieStorage.location?.href ?? webStorage.location?.href ?? null,
+    pollIntervalMs: extensionSettings?.pollIntervalMs,
     idbSelection: {
-      enabled: liveIdbEnabled,
+      enabled: Boolean(extensionSettings?.liveIdbEnabled),
       databaseName: idbStorage.selectedDatabase,
       storeName: idbStorage.selectedStore,
     },
@@ -297,8 +299,30 @@ function AppContent() {
 
   return (
     <div
-      className={`flex min-h-screen flex-col ${isDark ? 'bg-surface text-gray-100' : 'bg-slate-50 text-slate-900'}`}
+      className={`relative flex min-h-screen flex-col ${isDark ? 'bg-surface text-gray-100' : 'bg-slate-50 text-slate-900'}`}
     >
+      {extensionSettings && !extensionSettings.enabled && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+          <div
+            className={`max-w-md rounded-xl border p-6 text-center shadow-xl ${
+              isDark ? 'border-surface-border bg-surface-raised' : 'border-slate-200 bg-white'
+            }`}
+          >
+            <h2 className="text-lg font-semibold">StorageLens is turned off</h2>
+            <p className={`mt-2 text-sm ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+              Enable the extension from the toolbar popup or extension settings to continue inspecting storage.
+            </p>
+            <button
+              type="button"
+              onClick={() => void chrome.runtime.openOptionsPage()}
+              className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Open settings
+            </button>
+          </div>
+        </div>
+      )}
+
       <PanelHeader
         location={location}
         entryCount={headerEntryCount}
@@ -426,10 +450,10 @@ function AppContent() {
         unseenCount={liveTracking.unseenCount}
         isPaused={liveTracking.isPaused}
         isSyncing={liveTracking.isSyncing}
-        liveIdbEnabled={liveIdbEnabled}
+        liveIdbEnabled={Boolean(extensionSettings?.liveIdbEnabled)}
         isDark={isDark}
         onPauseToggle={() => liveTracking.setPaused(!liveTracking.isPaused)}
-        onLiveIdbToggle={() => setLiveIdbEnabled((current) => !current)}
+        onLiveIdbToggle={() => void updateSettings({ liveIdbEnabled: !extensionSettings?.liveIdbEnabled })}
         onEventClick={handleLiveEventClick}
       />
 

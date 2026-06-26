@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { getSettings, setSettings, subscribeToSettings } from '../../../shared/settings/storage'
+import type { ThemeMode } from '../../../shared/settings/types'
 
-export type ThemeMode = 'dark' | 'light'
+export type { ThemeMode }
 
 interface ThemeContextValue {
   theme: ThemeMode
@@ -10,26 +12,19 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-const STORAGE_KEY = 'storagelens-theme'
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeMode>('dark')
 
   useEffect(() => {
-    chrome.storage.local.get([STORAGE_KEY], (result) => {
-      const stored = result[STORAGE_KEY]
-      if (stored === 'light' || stored === 'dark') {
-        setTheme(stored)
-      }
+    void getSettings().then((settings) => setTheme(settings.theme))
+
+    return subscribeToSettings((settings) => {
+      setTheme(settings.theme)
     })
   }, [])
 
   const toggleTheme = () => {
-    setTheme((current) => {
-      const next = current === 'dark' ? 'light' : 'dark'
-      chrome.storage.local.set({ [STORAGE_KEY]: next })
-      return next
-    })
+    void setSettings({ theme: theme === 'dark' ? 'light' : 'dark' })
   }
 
   return (

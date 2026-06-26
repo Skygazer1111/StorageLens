@@ -1,7 +1,33 @@
 import { handleCookieMessage } from './cookie-handlers'
 import { isPanelMessage, type PongMessage } from '../shared/messaging/types'
+import { DEFAULT_SETTINGS } from '../shared/settings/types'
 
+const SETTINGS_KEY = 'storagelens-settings'
 const livePorts = new Set<chrome.runtime.Port>()
+
+async function isExtensionEnabled(): Promise<boolean> {
+  const result = await chrome.storage.local.get([SETTINGS_KEY])
+  const settings = result[SETTINGS_KEY] as { enabled?: boolean } | undefined
+  return settings?.enabled ?? DEFAULT_SETTINGS.enabled
+}
+
+async function syncActionBadge(): Promise<void> {
+  const enabled = await isExtensionEnabled()
+  await chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' })
+  await chrome.action.setBadgeBackgroundColor({ color: '#64748b' })
+}
+
+void syncActionBadge()
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[SETTINGS_KEY]) {
+    void syncActionBadge()
+  }
+})
+
+chrome.runtime.onInstalled.addListener(() => {
+  void syncActionBadge()
+})
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'storagelens-live') return
@@ -12,24 +38,28 @@ chrome.runtime.onConnect.addListener((port) => {
 })
 
 chrome.cookies.onChanged.addListener((changeInfo) => {
-  for (const port of livePorts) {
-    try {
-      port.postMessage({
-        type: 'COOKIE_CHANGED',
-        payload: {
-          removed: changeInfo.removed,
-          cause: changeInfo.cause,
-          cookie: {
-            name: changeInfo.cookie.name,
-            domain: changeInfo.cookie.domain,
-            path: changeInfo.cookie.path,
+  void isExtensionEnabled().then((enabled) => {
+    if (!enabled) return
+
+    for (const port of livePorts) {
+      try {
+        port.postMessage({
+          type: 'COOKIE_CHANGED',
+          payload: {
+            removed: changeInfo.removed,
+            cause: changeInfo.cause,
+            cookie: {
+              name: changeInfo.cookie.name,
+              domain: changeInfo.cookie.domain,
+              path: changeInfo.cookie.path,
+            },
           },
-        },
-      })
-    } catch {
-      livePorts.delete(port)
+        })
+      } catch {
+        livePorts.delete(port)
+      }
     }
-  }
+  })
 })
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
