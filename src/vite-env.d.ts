@@ -8,6 +8,4 @@ declare global {
   }
 }
 
-declare const self: Window & typeof globalThis
-
 export {}

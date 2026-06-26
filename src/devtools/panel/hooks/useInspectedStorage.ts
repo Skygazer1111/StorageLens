@@ -141,14 +141,14 @@ export function useInspectedStorage(activeTab: StorageKind) {
   useEffect(() => {
     if (!isWebStorage) return
     void refresh()
-  }, [activeTab, isWebStorage, contextKey])
+  }, [activeTab, isWebStorage, contextKey, refresh])
 
   useEffect(() => {
     if (!isWebStorage) return
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [activeTab, isWebStorage, contextKey])
+  }, [isWebStorage, refresh])
 
   return {
     entries,

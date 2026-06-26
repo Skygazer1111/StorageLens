@@ -70,8 +70,17 @@ export function OptionsApp() {
 
   const navigate = (next: Section) => {
     setSection(next)
-    window.location.hash = next === 'settings' ? '' : next
   }
+
+  useEffect(() => {
+    const nextHash = section === 'settings' ? '' : `#${section}`
+    if (window.location.hash === nextHash) return
+    if (section === 'settings') {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+      return
+    }
+    window.location.hash = section
+  }, [section])
 
   if (isLoading || !settings) {
     return (

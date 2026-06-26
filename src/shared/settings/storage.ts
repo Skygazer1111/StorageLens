@@ -6,6 +6,8 @@ function mergeSettings(partial: Partial<StorageLensSettings>): StorageLensSettin
   return { ...DEFAULT_SETTINGS, ...partial }
 }
 
+export { mergeSettings }
+
 export async function getSettings(): Promise<StorageLensSettings> {
   const result = await chrome.storage.local.get([SETTINGS_KEY, 'storagelens-theme'])
   const stored = result[SETTINGS_KEY] as Partial<StorageLensSettings> | undefined

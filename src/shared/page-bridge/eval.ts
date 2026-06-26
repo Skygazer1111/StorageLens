@@ -33,9 +33,9 @@ async function evalInActiveTab<T>(expression: string): Promise<T> {
     target: { tabId },
     world: 'MAIN',
     func: (script: string) => {
-      // Trusted bridge scripts only — never pass user-provided strings.
-      // eslint-disable-next-line no-eval
-      return eval(script)
+      // Trusted bridge scripts only — runs in the page MAIN world, not extension context.
+      const run = new Function(`return ${script}`)
+      return run()
     },
     args: [expression],
   })

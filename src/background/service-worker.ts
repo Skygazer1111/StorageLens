@@ -1,8 +1,10 @@
 import { handleCookieMessage } from './cookie-handlers'
 import { isPanelMessage, type PongMessage } from '../shared/messaging/types'
 import { DEFAULT_SETTINGS } from '../shared/settings/types'
+import { isRestrictedTabUrl } from '../shared/page-bridge/runtime'
 
 const SETTINGS_KEY = 'storagelens-settings'
+const SIDE_PANEL_PATH = 'src/sidepanel/index.html'
 const livePorts = new Set<chrome.runtime.Port>()
 
 async function isExtensionEnabled(): Promise<boolean> {
@@ -31,6 +33,25 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 
 void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+
+async function syncSidePanelForTab(tabId: number, url?: string): Promise<void> {
+  const enabled = Boolean(url && !isRestrictedTabUrl(url))
+  await chrome.sidePanel.setOptions({
+    tabId,
+    path: SIDE_PANEL_PATH,
+    enabled,
+  })
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+    void syncSidePanelForTab(tabId, tab.url)
+  }
+})
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  void chrome.tabs.get(tabId).then((tab) => syncSidePanelForTab(tabId, tab.url))
+})
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'storagelens-live') return

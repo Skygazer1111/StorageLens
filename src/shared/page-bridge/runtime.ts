@@ -6,7 +6,7 @@ export interface PageBridgeState {
 }
 
 let state: PageBridgeState = {
-  mode: typeof chrome.devtools?.inspectedWindow?.eval === 'function' ? 'devtools' : 'sidepanel',
+  mode: 'sidepanel',
   tabId: null,
 }
 
