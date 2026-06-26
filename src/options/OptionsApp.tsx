@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useExtensionSettings } from '../shared/hooks/useExtensionSettings'
 import { Toggle } from '../shared/components/Toggle'
+import { ExtensionLogo } from '../shared/components/ExtensionLogo'
 import { PRIVACY_POLICY, TERMS_OF_SERVICE } from '../shared/legal/content'
 import type { ThemeMode } from '../shared/settings/types'
 
@@ -100,9 +101,12 @@ export function OptionsApp() {
     <div className={`min-h-screen ${shell}`}>
       <header className={`border-b ${isDark ? 'border-surface-border' : 'border-slate-200'}`}>
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
-          <div>
-            <h1 className="text-xl font-semibold">StorageLens</h1>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Extension settings & legal</p>
+          <div className="flex items-center gap-3">
+            <ExtensionLogo size={44} />
+            <div>
+              <h1 className="text-xl font-semibold">StorageLens</h1>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Extension settings & legal</p>
+            </div>
           </div>
           <div className="flex gap-2">
             {(['dark', 'light'] as ThemeMode[]).map((mode) => (

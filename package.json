@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run icons && tsc --noEmit && vite build",
+    "icons": "node scripts/generate-icons.mjs",
     "test": "vitest run",
     "package": "npm run build && powershell -NoProfile -Command \"if (Test-Path storagelens.zip) { Remove-Item storagelens.zip }; Compress-Archive -Path dist\\* -DestinationPath storagelens.zip\"",
     "preview": "vite preview",
@@ -38,6 +39,7 @@
     "globals": "^17.7.0",
     "postcss": "^8.5.15",
     "prettier": "^3.8.4",
+    "sharp": "^0.35.2",
     "tailwindcss": "^3.4.19",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0",

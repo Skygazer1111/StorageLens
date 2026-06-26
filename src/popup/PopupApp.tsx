@@ -1,5 +1,6 @@
 import { useExtensionSettings } from '../shared/hooks/useExtensionSettings'
 import { Toggle } from '../shared/components/Toggle'
+import { ExtensionLogo } from '../shared/components/ExtensionLogo'
 import type { ThemeMode } from '../shared/settings/types'
 
 function openOptions(section?: 'privacy' | 'terms') {
@@ -31,9 +32,7 @@ export function PopupApp() {
         className={`border-b px-4 py-4 ${isDark ? 'border-surface-border bg-surface-raised/40' : 'border-slate-200 bg-white'}`}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-lg font-bold text-accent">
-            SL
-          </div>
+          <ExtensionLogo size={40} />
           <div>
             <h1 className="text-base font-semibold tracking-tight">StorageLens</h1>
             <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
