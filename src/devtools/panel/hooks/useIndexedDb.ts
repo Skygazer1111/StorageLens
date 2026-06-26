@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
 import type { IdbDatabaseInfo, IdbObjectStoreInfo, IdbRecord } from '../../../injected/idb-bridge'
 import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import {
   deleteIndexedDbRecord,
   IDB_PAGE_SIZE,
@@ -36,6 +37,7 @@ async function readPageLocation(): Promise<PageLocation> {
 }
 
 export function useIndexedDb(enabled: boolean) {
+  const { contextKey } = usePageBridge()
   const [location, setLocation] = useState<PageLocation | null>(null)
   const [databases, setDatabases] = useState<IdbDatabaseInfo[]>([])
   const [storesByDatabase, setStoresByDatabase] = useState<Record<string, IdbObjectStoreInfo[]>>({})
@@ -186,14 +188,14 @@ export function useIndexedDb(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return
     void refresh()
-  }, [enabled, refresh])
+  }, [enabled, contextKey, refresh])
 
   useEffect(() => {
     if (!enabled) return
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [enabled, refresh])
+  }, [enabled, contextKey, refresh])
 
   return {
     location,

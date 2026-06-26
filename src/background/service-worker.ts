@@ -27,7 +27,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   void syncActionBadge()
+  void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 })
+
+void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'storagelens-live') return

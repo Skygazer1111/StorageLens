@@ -8,11 +8,13 @@
     "service_worker": "src/background/service-worker.ts",
     "type": "module"
   },
-  "permissions": ["cookies", "storage", "activeTab"],
+  "permissions": ["cookies", "storage", "activeTab", "sidePanel", "scripting", "tabs"],
   "host_permissions": ["<all_urls>"],
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
   "action": {
-    "default_popup": "src/popup/index.html",
-    "default_title": "StorageLens",
+    "default_title": "Open StorageLens",
     "default_icon": {
       "16": "public/icons/icon16.png",
       "48": "public/icons/icon48.png",

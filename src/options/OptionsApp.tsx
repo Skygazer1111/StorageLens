@@ -193,8 +193,8 @@ export function OptionsApp() {
             <section className={`rounded-xl border p-5 ${card}`}>
               <h2 className="mb-2 text-sm font-semibold">Using StorageLens</h2>
               <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-                The full storage workspace runs inside Chrome DevTools. Open DevTools on any page, then select the
-                StorageLens tab to browse, edit, snapshot, and diff storage.
+                Click the StorageLens toolbar icon to open the side panel and inspect storage on the active
+                tab. The full workspace is also available in DevTools under the StorageLens tab.
               </p>
             </section>
           </div>

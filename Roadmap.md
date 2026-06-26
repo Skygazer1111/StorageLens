@@ -463,7 +463,7 @@ StorageLens/
 | Feature | Notes |
 |---------|--------|
 | **Firefox port** | `browser.*` polyfill; adjust cookie APIs |
-| **Side Panel mode** | Alternative to DevTools for quicker access |
+| **Side Panel mode** | Alternative to DevTools for quicker access | 🟨 In progress |
 | **Cache Storage / Web SQL** | If still relevant for target users |
 | **Extension storage viewer** | `chrome.storage.local/sync` for debugging the extension itself |
 | **Team snapshot sync** | Optional cloud backend (changes privacy story) |

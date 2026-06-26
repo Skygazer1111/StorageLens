@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
 import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import type { CookieData } from '../../../shared/messaging/types'
 import {
   clearCookies,
@@ -38,6 +39,7 @@ async function readPageLocation(): Promise<PageLocation> {
 }
 
 export function useCookieStorage(enabled: boolean) {
+  const { contextKey } = usePageBridge()
   const [entries, setEntries] = useState<StorageEntry[]>([])
   const [location, setLocation] = useState<PageLocation | null>(null)
   const [state, setState] = useState<LoadState>('idle')
@@ -149,14 +151,14 @@ export function useCookieStorage(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return
     void refresh()
-  }, [enabled, refresh])
+  }, [enabled, contextKey, refresh])
 
   useEffect(() => {
     if (!enabled) return
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [enabled, refresh])
+  }, [enabled, contextKey, refresh])
 
   return {
     entries,

@@ -36,6 +36,7 @@ import { useSnapshots } from './hooks/snapshots/useSnapshots'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
 import { useExtensionSettings } from '../../shared/hooks/useExtensionSettings'
+import { usePageBridge } from '../../shared/page-bridge/PageBridgeProvider'
 
 const ValueEditorModal = lazy(() =>
   import('./components/ValueEditorModal').then((module) => ({
@@ -70,6 +71,7 @@ function AppContent() {
   const [cookieFilters, setCookieFilters] = useState<CookieFilterState>(DEFAULT_COOKIE_FILTERS)
   const [cookieSort, setCookieSort] = useState<CookieSortState>(DEFAULT_COOKIE_SORT)
   const { settings: extensionSettings, updateSettings } = useExtensionSettings()
+  const { mode, isRestricted, tabUrl } = usePageBridge()
   const snapshots = useSnapshots()
 
   const isCookies = activeTab === 'cookies'
@@ -397,6 +399,13 @@ function AppContent() {
           </button>
         </div>
       </div>
+
+      {mode === 'sidepanel' && isRestricted && (
+        <div className="mx-4 mt-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Storage cannot be read on this tab ({tabUrl ?? 'restricted URL'}). Open a normal website tab
+          (http/https) and switch back to StorageLens.
+        </div>
+      )}
 
       {error && (
         <div className="mx-4 mt-4 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">

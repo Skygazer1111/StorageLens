@@ -1,11 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PageBridgeProvider } from '../../shared/page-bridge/PageBridgeProvider'
-import App from './App'
+import App from '../devtools/panel/App'
+import { PageBridgeProvider } from '../shared/page-bridge/PageBridgeProvider'
+import '../styles/globals.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PageBridgeProvider mode="devtools">
+    <PageBridgeProvider mode="sidepanel">
       <App />
     </PageBridgeProvider>
   </StrictMode>,

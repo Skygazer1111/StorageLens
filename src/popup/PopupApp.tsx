@@ -105,13 +105,15 @@ export function PopupApp() {
           className={`rounded-lg border p-3 ${isDark ? 'border-surface-border bg-surface-raised/30' : 'border-slate-200 bg-white'}`}
         >
           <h2 className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-            Open full panel
+            Open StorageLens
           </h2>
-          <ol className={`mt-2 space-y-1.5 text-xs leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
-            <li>1. Open Chrome DevTools (<kbd className="rounded bg-black/20 px-1">F12</kbd>)</li>
-            <li>2. Select the <strong>StorageLens</strong> tab</li>
-            <li>3. Browse, edit, and diff storage on the inspected page</li>
-          </ol>
+          <p className={`mt-2 text-xs leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+            Click the StorageLens toolbar icon to open the <strong>side panel</strong> and inspect the active
+            tab without DevTools.
+          </p>
+          <p className={`mt-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            DevTools panel is still available: <kbd className="rounded bg-black/20 px-1">F12</kbd> → StorageLens tab.
+          </p>
         </section>
       </main>
 

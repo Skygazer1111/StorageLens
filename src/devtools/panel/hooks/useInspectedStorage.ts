@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
 import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import {
   readLocalStorage,
   readSessionStorage,
@@ -48,6 +49,7 @@ async function readStorageForKind(kind: StorageKind): Promise<StorageEntry[]> {
 
 export function useInspectedStorage(activeTab: StorageKind) {
   const isWebStorage = activeTab === 'local' || activeTab === 'session'
+  const { contextKey } = usePageBridge()
   const [entries, setEntries] = useState<StorageEntry[]>([])
   const [location, setLocation] = useState<PageLocation | null>(null)
   const [state, setState] = useState<LoadState>('idle')
@@ -139,14 +141,14 @@ export function useInspectedStorage(activeTab: StorageKind) {
   useEffect(() => {
     if (!isWebStorage) return
     void refresh()
-  }, [refresh, isWebStorage])
+  }, [activeTab, isWebStorage, contextKey])
 
   useEffect(() => {
     if (!isWebStorage) return
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [refresh, isWebStorage])
+  }, [activeTab, isWebStorage, contextKey])
 
   return {
     entries,

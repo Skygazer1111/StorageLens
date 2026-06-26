@@ -1,4 +1,5 @@
 import type { PageLocation } from '../../../injected/page-bridge'
+import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import { useTheme } from '../hooks/useTheme'
 
 interface PanelHeaderProps {
@@ -17,19 +18,32 @@ export function PanelHeader({
   storageLabel,
 }: PanelHeaderProps) {
   const { theme, toggleTheme, isDark } = useTheme()
+  const { mode, tabTitle } = usePageBridge()
 
   return (
     <header
       className={`border-b px-4 py-3 ${isDark ? 'border-surface-border' : 'border-slate-200'}`}
     >
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className={`text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            StorageLens
-          </h1>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className={`text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              StorageLens
+            </h1>
+            {mode === 'sidepanel' && (
+              <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                Side panel
+              </span>
+            )}
+          </div>
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{storageLabel}</p>
+          {mode === 'sidepanel' && tabTitle && (
+            <p className={`mt-1 truncate text-xs ${isDark ? 'text-gray-500' : 'text-slate-400'}`} title={tabTitle}>
+              Tab: {tabTitle}
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2">
           <div className={`text-right text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
             <p>
               {searchQuery.trim()
@@ -37,6 +51,18 @@ export function PanelHeader({
                 : `${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => void chrome.runtime.openOptionsPage()}
+            className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+              isDark
+                ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
+                : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
+            }`}
+            title="Extension settings"
+          >
+            Settings
+          </button>
           <button
             type="button"
             onClick={toggleTheme}
