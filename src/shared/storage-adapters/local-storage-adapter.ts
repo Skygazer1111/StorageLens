@@ -1,21 +1,21 @@
-import {
-  READ_LOCAL_STORAGE_SCRIPT,
-  READ_SESSION_STORAGE_SCRIPT,
-  type StorageReadResponse,
-} from '../../injected/page-bridge'
-import { evalJsonInInspectedPage } from '../page-bridge/eval'
+import { runPageStorageOperation } from '../../injected/page-ops'
+import type { StorageReadResponse } from '../../injected/page-bridge'
+import { invokeInInspectedPage } from '../page-bridge/eval'
 import { normalizeStorageResponse } from './parse-value'
 import type { StorageEntry } from './types'
 
-async function readStorage(script: string): Promise<StorageEntry[]> {
-  const response = await evalJsonInInspectedPage<StorageReadResponse>(script)
-  return normalizeStorageResponse(response)
+async function readStorage(storageName: 'localStorage' | 'sessionStorage'): Promise<StorageEntry[]> {
+  const response = await invokeInInspectedPage(runPageStorageOperation, {
+    kind: 'read',
+    storage: storageName,
+  })
+  return normalizeStorageResponse(response as StorageReadResponse)
 }
 
 export function readLocalStorage(): Promise<StorageEntry[]> {
-  return readStorage(READ_LOCAL_STORAGE_SCRIPT)
+  return readStorage('localStorage')
 }
 
 export function readSessionStorage(): Promise<StorageEntry[]> {
-  return readStorage(READ_SESSION_STORAGE_SCRIPT)
+  return readStorage('sessionStorage')
 }

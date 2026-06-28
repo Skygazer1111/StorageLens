@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
 import type { IdbDatabaseInfo, IdbObjectStoreInfo, IdbRecord } from '../../../injected/idb-bridge'
-import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import { useCallback, useEffect, useState } from 'react'
+import type { PageLocation } from '../../../injected/page-bridge'
+import { readPageLocation } from '../../../shared/page-bridge/page-location'
 import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import {
   deleteIndexedDbRecord,
@@ -12,29 +12,6 @@ import {
 } from '../../../shared/storage-adapters/idb-adapter'
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error'
-
-interface PageLocationResponse {
-  ok: true
-  href: string
-  origin: string
-}
-
-interface PageLocationError {
-  ok: false
-  error: string
-}
-
-async function readPageLocation(): Promise<PageLocation> {
-  const response = await evalJsonInInspectedPage<PageLocationResponse | PageLocationError>(
-    READ_PAGE_LOCATION_SCRIPT,
-  )
-
-  if (!response.ok) {
-    throw new Error(response.error)
-  }
-
-  return { href: response.href, origin: response.origin }
-}
 
 export function useIndexedDb(enabled: boolean) {
   const { contextKey } = usePageBridge()

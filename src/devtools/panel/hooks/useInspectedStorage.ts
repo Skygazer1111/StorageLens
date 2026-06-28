@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { READ_PAGE_LOCATION_SCRIPT, type PageLocation } from '../../../injected/page-bridge'
-import { evalJsonInInspectedPage } from '../../../shared/page-bridge/eval'
+import type { PageLocation } from '../../../injected/page-bridge'
+import { readPageLocation } from '../../../shared/page-bridge/page-location'
 import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import {
   readLocalStorage,
@@ -19,29 +19,6 @@ import {
 import type { StorageEntry, StorageKind } from '../../../shared/storage-adapters/types'
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error'
-
-interface PageLocationResponse {
-  ok: true
-  href: string
-  origin: string
-}
-
-interface PageLocationError {
-  ok: false
-  error: string
-}
-
-async function readPageLocation(): Promise<PageLocation> {
-  const response = await evalJsonInInspectedPage<PageLocationResponse | PageLocationError>(
-    READ_PAGE_LOCATION_SCRIPT,
-  )
-
-  if (!response.ok) {
-    throw new Error(response.error)
-  }
-
-  return { href: response.href, origin: response.origin }
-}
 
 async function readStorageForKind(kind: StorageKind): Promise<StorageEntry[]> {
   return kind === 'local' ? readLocalStorage() : readSessionStorage()

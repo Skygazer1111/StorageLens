@@ -1,10 +1,6 @@
 import {
-  buildDeleteRecordScript,
-  buildListStoresScript,
-  buildReadRecordsScript,
   idbRecordId,
   IDB_PAGE_SIZE,
-  LIST_INDEXED_DB_SCRIPT,
   type IdbDatabaseInfo,
   type IdbErrorResult,
   type IdbListDatabasesResult,
@@ -13,32 +9,35 @@ import {
   type IdbReadRecordsResult,
   type IdbRecord,
 } from '../../injected/idb-bridge'
-import { evalJsonInInspectedPageAsync } from '../page-bridge/eval'
-
-type IdbWriteResult = { ok: true } | IdbErrorResult
+import { runIdbOperation } from '../../injected/idb-ops'
+import { invokeInInspectedPage } from '../page-bridge/eval'
 
 export async function listIndexedDatabases(): Promise<IdbDatabaseInfo[]> {
-  const response = await evalJsonInInspectedPageAsync<IdbListDatabasesResult | IdbErrorResult>(
-    LIST_INDEXED_DB_SCRIPT,
+  const response = await invokeInInspectedPage(
+    runIdbOperation,
+    { kind: 'listDatabases' },
+    { awaitPromise: true },
   )
 
   if (!response.ok) {
     throw new Error(response.error)
   }
 
-  return response.databases
+  return (response as IdbListDatabasesResult).databases
 }
 
 export async function listObjectStores(databaseName: string): Promise<IdbObjectStoreInfo[]> {
-  const response = await evalJsonInInspectedPageAsync<IdbListStoresResult | IdbErrorResult>(
-    buildListStoresScript(databaseName),
+  const response = await invokeInInspectedPage(
+    runIdbOperation,
+    { kind: 'listStores', databaseName },
+    { awaitPromise: true },
   )
 
   if (!response.ok) {
     throw new Error(response.error)
   }
 
-  return response.stores
+  return (response as IdbListStoresResult).stores
 }
 
 export async function readObjectStoreRecords(
@@ -47,15 +46,18 @@ export async function readObjectStoreRecords(
   offset = 0,
   limit = IDB_PAGE_SIZE,
 ): Promise<{ total: number; records: IdbRecord[]; hasMore: boolean }> {
-  const response = await evalJsonInInspectedPageAsync<IdbReadRecordsResult | IdbErrorResult>(
-    buildReadRecordsScript(databaseName, storeName, offset, limit),
+  const response = await invokeInInspectedPage(
+    runIdbOperation,
+    { kind: 'readRecords', databaseName, storeName, offset, limit },
+    { awaitPromise: true },
   )
 
   if (!response.ok) {
     throw new Error(response.error)
   }
 
-  const records = response.records.map((record) => ({
+  const result = response as IdbReadRecordsResult
+  const records = result.records.map((record) => ({
     id: idbRecordId(databaseName, storeName, record.key.display),
     database: databaseName,
     store: storeName,
@@ -64,9 +66,9 @@ export async function readObjectStoreRecords(
   }))
 
   return {
-    total: response.total,
+    total: result.total,
     records,
-    hasMore: response.hasMore,
+    hasMore: result.hasMore,
   }
 }
 
@@ -75,12 +77,14 @@ export async function deleteIndexedDbRecord(
   storeName: string,
   key: unknown,
 ): Promise<void> {
-  const response = await evalJsonInInspectedPageAsync<IdbWriteResult>(
-    buildDeleteRecordScript(databaseName, storeName, key),
+  const response = await invokeInInspectedPage(
+    runIdbOperation,
+    { kind: 'deleteRecord', databaseName, storeName, key },
+    { awaitPromise: true },
   )
 
   if (!response.ok) {
-    throw new Error(response.error)
+    throw new Error((response as IdbErrorResult).error)
   }
 }
 

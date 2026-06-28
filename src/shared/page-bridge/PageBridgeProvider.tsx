@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
 import { isRestrictedTabUrl, setPageBridgeMode, setPageBridgeTabId, type PageBridgeMode } from './runtime'
 
 interface PageBridgeContextValue {
@@ -22,18 +22,16 @@ export function PageBridgeProvider({ mode, children }: PageBridgeProviderProps) 
   const [tabUrl, setTabUrl] = useState<string | null>(null)
   const [tabTitle, setTabTitle] = useState<string | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPageBridgeMode(mode)
-  }, [mode])
 
-  useEffect(() => {
     if (mode !== 'sidepanel') {
       setPageBridgeTabId(null)
       return
     }
 
     const syncActiveTab = async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
       setTabId(tab?.id ?? null)
       setTabUrl(tab?.url ?? null)
       setTabTitle(tab?.title ?? null)

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { READ_PAGE_LOCATION_SCRIPT } from '../../../../injected/page-bridge'
-import { evalJsonInInspectedPage } from '../../../../shared/page-bridge/eval'
+import { readPageLocation } from '../../../../shared/page-bridge/page-location'
 import { readCookies } from '../../../../shared/storage-adapters/cookie-adapter'
 import { readLocalStorage, readSessionStorage } from '../../../../shared/storage-adapters/local-storage-adapter'
 import { entryToCookieData } from '../../../../shared/storage-adapters/cookie-utils'
@@ -9,27 +8,6 @@ import type { StorageSnapshot } from '../../../../shared/snapshots/types'
 
 const SNAPSHOTS_KEY = 'storagelens-snapshots'
 const MAX_SNAPSHOTS = 20
-
-interface PageLocationResponse {
-  ok: true
-  href: string
-  origin: string
-}
-
-interface PageLocationError {
-  ok: false
-  error: string
-}
-
-async function readPageLocation(): Promise<{ href: string; origin: string }> {
-  const response = await evalJsonInInspectedPage<PageLocationResponse | PageLocationError>(
-    READ_PAGE_LOCATION_SCRIPT,
-  )
-  if (!response.ok) {
-    throw new Error(response.error)
-  }
-  return { href: response.href, origin: response.origin }
-}
 
 function entriesToRecord(entries: Array<{ key: string; value: string }>): Record<string, string> {
   const map: Record<string, string> = {}
