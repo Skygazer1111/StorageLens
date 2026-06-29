@@ -14,7 +14,8 @@
     "default_path": "src/sidepanel/index.html"
   },
   "action": {
-    "default_title": "Open StorageLens",
+    "default_title": "StorageLens",
+    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "public/icons/icon16.png",
       "32": "public/icons/icon32.png",

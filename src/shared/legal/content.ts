@@ -109,3 +109,5 @@ These Terms are governed by the laws applicable in your jurisdiction, without re
 
 For questions about these Terms, contact the maintainer through the project repository.
 `.trim()
+
+export const COPYRIGHT_NOTICE = '© 2026 StorageLens. All rights reserved.'

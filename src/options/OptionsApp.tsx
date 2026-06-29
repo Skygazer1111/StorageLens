@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useExtensionSettings } from '../shared/hooks/useExtensionSettings'
 import { Toggle } from '../shared/components/Toggle'
 import { ExtensionLogo } from '../shared/components/ExtensionLogo'
-import { PRIVACY_POLICY, TERMS_OF_SERVICE } from '../shared/legal/content'
+import { LegalDocument } from '../shared/legal/LegalDocument'
+import { COPYRIGHT_NOTICE, PRIVACY_POLICY, TERMS_OF_SERVICE } from '../shared/legal/content'
 import type { ThemeMode } from '../shared/settings/types'
 
 type Section = 'settings' | 'privacy' | 'terms'
@@ -11,51 +12,6 @@ function parseHash(): Section {
   const hash = window.location.hash.replace('#', '')
   if (hash === 'privacy' || hash === 'terms') return hash
   return 'settings'
-}
-
-function LegalDocument({ content, isDark }: { content: string; isDark: boolean }) {
-  const lines = content.split('\n')
-
-  return (
-    <article
-      className={`prose-sm max-w-none space-y-3 text-sm leading-relaxed ${
-        isDark ? 'text-gray-300' : 'text-slate-700'
-      }`}
-    >
-      {lines.map((line, index) => {
-        if (line.startsWith('# ')) {
-          return (
-            <h1 key={index} className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {line.slice(2)}
-            </h1>
-          )
-        }
-        if (line.startsWith('## ')) {
-          return (
-            <h2 key={index} className={`mt-6 text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
-              {line.slice(3)}
-            </h2>
-          )
-        }
-        if (line.startsWith('| ')) {
-          return (
-            <p key={index} className="font-mono text-xs">
-              {line}
-            </p>
-          )
-        }
-        if (line.startsWith('- ')) {
-          return (
-            <li key={index} className="ml-4 list-disc">
-              {line.slice(2)}
-            </li>
-          )
-        }
-        if (!line.trim()) return <div key={index} className="h-2" />
-        return <p key={index}>{line}</p>
-      })}
-    </article>
-  )
 }
 
 export function OptionsApp() {
@@ -206,8 +162,9 @@ export function OptionsApp() {
             <section className={`rounded-xl border p-5 ${card}`}>
               <h2 className="mb-2 text-sm font-semibold">Using StorageLens</h2>
               <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-                Click the StorageLens toolbar icon to open the side panel and inspect storage on the active
-                tab. The full workspace is also available in DevTools under the StorageLens tab.
+                Click the StorageLens toolbar icon to open the popup, then use <strong>Open side panel</strong>{' '}
+                to inspect storage on the active tab. The full workspace is also available in DevTools under
+                the StorageLens tab.
               </p>
             </section>
           </div>
@@ -225,6 +182,14 @@ export function OptionsApp() {
           </div>
         )}
       </main>
+
+      <footer
+        className={`border-t py-6 text-center text-sm ${
+          isDark ? 'border-surface-border text-gray-500' : 'border-slate-200 text-slate-400'
+        }`}
+      >
+        {COPYRIGHT_NOTICE}
+      </footer>
     </div>
   )
 }

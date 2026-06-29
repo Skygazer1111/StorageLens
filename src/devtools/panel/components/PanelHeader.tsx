@@ -1,5 +1,6 @@
 import type { PageLocation } from '../../../injected/page-bridge'
 import { ExtensionLogo } from '../../../shared/components/ExtensionLogo'
+import { ExtensionPowerSwitch } from '../../../shared/components/ExtensionPowerSwitch'
 import { usePageBridge } from '../../../shared/page-bridge/PageBridgeProvider'
 import { useTheme } from '../hooks/useTheme'
 
@@ -9,6 +10,8 @@ interface PanelHeaderProps {
   matchCount: number
   searchQuery: string
   storageLabel: string
+  extensionEnabled?: boolean
+  onExtensionEnabledChange?: (enabled: boolean) => void
 }
 
 export function PanelHeader({
@@ -17,6 +20,8 @@ export function PanelHeader({
   matchCount,
   searchQuery,
   storageLabel,
+  extensionEnabled,
+  onExtensionEnabledChange,
 }: PanelHeaderProps) {
   const { theme, toggleTheme, isDark } = useTheme()
   const { mode, tabTitle } = usePageBridge()
@@ -37,6 +42,13 @@ export function PanelHeader({
               <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
                 Side panel
               </span>
+            )}
+            {mode === 'sidepanel' && extensionEnabled !== undefined && onExtensionEnabledChange && (
+              <ExtensionPowerSwitch
+                enabled={extensionEnabled}
+                isDark={isDark}
+                onChange={onExtensionEnabledChange}
+              />
             )}
           </div>
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{storageLabel}</p>

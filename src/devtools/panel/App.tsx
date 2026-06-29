@@ -23,6 +23,7 @@ import { CookieTable } from './components/CookieTable'
 import { IndexedDbExplorer } from './components/IndexedDbExplorer'
 import { EntryDetail } from './components/EntryDetail'
 import { PanelHeader } from './components/PanelHeader'
+import { PanelFooter } from './components/PanelFooter'
 import { SearchBar } from './components/SearchBar'
 import { SnapshotModal } from './components/SnapshotModal'
 import { StorageTable } from './components/StorageTable'
@@ -36,6 +37,7 @@ import { useSnapshots } from './hooks/snapshots/useSnapshots'
 import { ThemeProvider, useTheme } from './hooks/useTheme'
 import { ToastProvider, useToast } from './hooks/useToast'
 import { useExtensionSettings } from '../../shared/hooks/useExtensionSettings'
+import { ExtensionPowerSwitch } from '../../shared/components/ExtensionPowerSwitch'
 import { usePageBridge } from '../../shared/page-bridge/PageBridgeProvider'
 
 const ValueEditorModal = lazy(() =>
@@ -73,6 +75,10 @@ function AppContent() {
   const { settings: extensionSettings, updateSettings } = useExtensionSettings()
   const { mode, isRestricted, tabUrl } = usePageBridge()
   const snapshots = useSnapshots()
+
+  const handleExtensionEnabledChange = (enabled: boolean) => {
+    void updateSettings({ enabled })
+  }
 
   const isCookies = activeTab === 'cookies'
   const isIndexedDb = activeTab === 'indexeddb'
@@ -312,15 +318,18 @@ function AppContent() {
           >
             <h2 className="text-lg font-semibold">StorageLens is turned off</h2>
             <p className={`mt-2 text-sm ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-              Enable the extension from the toolbar popup or extension settings to continue inspecting storage.
+              Turn the extension back on to inspect storage on this page.
             </p>
-            <button
-              type="button"
-              onClick={() => void chrome.runtime.openOptionsPage()}
-              className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
-              Open settings
-            </button>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <ExtensionPowerSwitch
+                enabled={false}
+                isDark={isDark}
+                onChange={handleExtensionEnabledChange}
+              />
+              <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>
+                Enable extension
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -331,6 +340,8 @@ function AppContent() {
         matchCount={headerMatchCount}
         searchQuery={searchQuery}
         storageLabel={storageLabel}
+        extensionEnabled={extensionSettings?.enabled}
+        onExtensionEnabledChange={mode === 'sidepanel' ? handleExtensionEnabledChange : undefined}
       />
 
       <SearchBar
@@ -567,6 +578,14 @@ function AppContent() {
         onCancel={() => setClearOpen(false)}
         onConfirm={() => void handleClearAll()}
       />
+
+      {extensionSettings && (
+        <PanelFooter
+          isDark={isDark}
+          extensionEnabled={extensionSettings.enabled}
+          onExtensionEnabledChange={handleExtensionEnabledChange}
+        />
+      )}
     </div>
   )
 }
