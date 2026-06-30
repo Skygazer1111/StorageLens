@@ -579,13 +579,7 @@ function AppContent() {
         onConfirm={() => void handleClearAll()}
       />
 
-      {extensionSettings && (
-        <PanelFooter
-          isDark={isDark}
-          extensionEnabled={extensionSettings.enabled}
-          onExtensionEnabledChange={handleExtensionEnabledChange}
-        />
-      )}
+      <PanelFooter isDark={isDark} />
     </div>
   )
 }
