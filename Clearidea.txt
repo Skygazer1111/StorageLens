@@ -1,0 +1,132 @@
+================================================================================
+STORAGELENS — CLEAR IDEA / PRODUCT BRIEF
+================================================================================
+
+What it is
+----------
+StorageLens is a Chrome Manifest V3 browser extension for developers. It is a
+dedicated UI for inspecting and editing browser storage while debugging a web
+app—cleaner and more useful than digging through Chrome’s Application tab.
+
+What problem it solves
+----------------------
+Developers constantly need to:
+
+  • See what is in localStorage / sessionStorage / cookies / IndexedDB
+  • Edit JSON values without hand-editing escaped strings
+  • Decode JWTs stored in storage
+  • Notice when storage changes while the app is running
+  • Compare “before vs after” storage state when testing a feature
+
+Chrome’s built-in Application panel is clunky for this. StorageLens is built
+for that workflow.
+
+What it does (capabilities)
+---------------------------
+1. Inspect storage types
+   - Local Storage — list, search, add, edit, delete, clear
+   - Session Storage — same CRUD
+   - Cookies — list, filter, sort, add, edit, delete (via Chrome cookies API)
+   - IndexedDB — list databases and object stores, paginated record reads,
+     typed value previews (JSON, blob, ArrayBuffer, etc.), delete records
+
+2. Better viewing and editing
+   - JSON tree viewer for nested objects/arrays
+   - Fuzzy search across keys and values
+   - Monaco editor for editing values with syntax highlighting
+   - Virtualized tables for large key sets
+   - Copy key / value / JSON path
+
+3. JWT helper
+   - Detects JWT-shaped strings
+   - Decodes header and payload (does NOT verify signatures)
+   - Shows readable exp/iat timestamps
+
+4. Live change tracking
+   - Polls localStorage, sessionStorage, and cookies while the panel is open
+   - Optional live IndexedDB diffs for the selected store
+   - Activity feed with pause/resume and badges on storage tabs
+   - Cookie changes pushed from the background service worker
+
+5. Snapshots
+   - Capture localStorage + sessionStorage + cookies for the current origin
+   - Compare two snapshots or snapshot vs live
+   - Export / import JSON; keep up to ~20 snapshots locally
+
+6. Extension controls
+   - Master enable/disable (pauses tracking and inspection when off)
+   - Theme: dark / light
+   - Live tracking on/off and poll interval
+   - Privacy Policy and Terms of Service (in popup, options, and side panel)
+   - Copyright notice in UI footers
+
+How you open it (entry points)
+------------------------------
+• Toolbar icon → popup
+    - Toggle extension on/off
+    - Button: Open side panel
+    - Tabs: Privacy, Terms
+    - Copyright
+
+• Side panel (main quick-access UI)
+    - Same storage workspace as DevTools
+    - On/off toggle in the header next to “StorageLens”
+    - Footer: Privacy · Terms · copyright
+    - Follows the active browser tab
+
+• DevTools → StorageLens tab
+    - Full workspace while you are already debugging
+
+• Options page
+    - Full settings (live tracking, poll interval, theme)
+    - Full Privacy Policy and Terms of Service
+
+Who it is for
+-------------
+Front-end and full-stack developers debugging auth, feature flags, carts,
+caches, and any app that stores state in the browser. It is a developer tool,
+not a consumer privacy/security product.
+
+What it is NOT
+--------------
+• Not an analytics or tracking product
+• Not cloud sync — all data stays on the machine
+• Not a JWT verifier (decode only)
+• Not a full IndexedDB writer (v1: read + delete; put/create later)
+• Does not work on chrome:// or other restricted browser pages
+
+Privacy model (simple)
+----------------------
+• StorageLens reads/writes storage only on pages you choose to inspect
+• Settings and snapshots live in chrome.storage.local on your device
+• No remote server, no accounts, no third-party analytics in v1
+
+Technical idea (how it works under the hood)
+--------------------------------------------
+• MV3 background service worker handles cookies and messaging
+• Side panel injects trusted functions with chrome.scripting.executeScript
+  in the ISOLATED world (CSP-safe; avoids unsafe-eval on strict sites)
+• DevTools panel can use chrome.devtools.inspectedWindow.eval
+• React UI shared between side panel and DevTools panel
+• Built with TypeScript, Vite, CRXJS, Tailwind, React 19
+
+Current product status (v1)
+---------------------------
+Implemented and intended for Chrome Web Store packaging:
+
+  Phases 0–7  — foundation through snapshots
+  Phase 8     — live change tracking
+  Phase 9     — settings, popup, side panel, options, legal, icons, package
+
+Before publishing, run automated tests and the manual checklist in TESTING.md
+(using npm run qa and the local playground page).
+
+One-sentence pitch
+------------------
+StorageLens is a modern Chrome side panel + DevTools workspace for browsing,
+editing, decoding, and watching browser storage—localStorage, sessionStorage,
+cookies, and IndexedDB—without leaving your debugging flow.
+
+================================================================================
+End of Clearidea.txt
+================================================================================
