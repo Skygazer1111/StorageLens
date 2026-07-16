@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StorageLens QA Playground</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e5e7eb;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      line-height: 1.5;
+    }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    h2 { font-size: 15px; margin: 28px 0 8px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; }
+    p.sub { color: #9ca3af; margin-top: 0; font-size: 14px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    button {
+      background: #1f2433; color: #e5e7eb; border: 1px solid #343b4f;
+      border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+    }
+    button:hover { border-color: #818cf8; }
+    button.primary { background: #4f46e5; border-color: #4f46e5; color: white; font-weight: 600; }
+    button.danger { border-color: #7f1d1d; color: #fca5a5; }
+    #log {
+      background: #0a0c10; border: 1px solid #343b4f; border-radius: 8px;
+      padding: 12px; font-family: ui-monospace, monospace; font-size: 12px;
+      height: 200px; overflow-y: auto; white-space: pre-wrap;
+    }
+    .ok { color: #86efac; }
+    .err { color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <h1>StorageLens QA Playground</h1>
+  <p class="sub">Seed and mutate every storage type, then verify each one inside StorageLens (side panel and DevTools panel).</p>
+
+  <h2>1. Seed everything</h2>
+  <div class="row">
+    <button class="primary" id="seed-all">Seed all storage</button>
+    <button class="danger" id="clear-all">Clear all storage</button>
+  </div>
+
+  <h2>2. Live mutations (watch the Live activity feed)</h2>
+  <div class="row">
+    <button id="ls-add">localStorage: add key</button>
+    <button id="ls-update">localStorage: update counter</button>
+    <button id="ls-remove">localStorage: remove last added</button>
+  </div>
+  <div class="row">
+    <button id="ss-add">sessionStorage: add key</button>
+    <button id="ss-update">sessionStorage: update counter</button>
+  </div>
+  <div class="row">
+    <button id="ck-add">Cookie: add/refresh</button>
+    <button id="ck-remove">Cookie: expire qa_temp</button>
+  </div>
+  <div class="row">
+    <button id="idb-add">IndexedDB: add record</button>
+    <button id="idb-delete">IndexedDB: delete newest record</button>
+  </div>
+  <div class="row">
+    <button id="auto-toggle">Start auto-mutate (every 2s)</button>
+  </div>
+
+  <h2>Log</h2>
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById('log')
+    function log(msg, cls) {
+      const line = document.createElement('div')
+      if (cls) line.className = cls
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+      logEl.prepend(line)
+    }
+
+    // A sample JWT (header/payload only, dummy signature) for the JWT decoder feature.
+    const SAMPLE_JWT =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+      btoa(JSON.stringify({ sub: 'qa-user-1', name: 'QA Tester', role: 'admin', iat: 1700000000, exp: 1893456000 })).replace(/=+$/, '') +
+      '.dummysignature'
+
+    function seedWebStorage() {
+      localStorage.setItem('qa_string', 'plain text value')
+      localStorage.setItem('qa_number', '42')
+      localStorage.setItem('qa_bool', 'true')
+      localStorage.setItem('qa_json', JSON.stringify({ user: { id: 7, name: 'Ada' }, tags: ['alpha', 'beta'], active: true }))
+      localStorage.setItem('qa_json_array', JSON.stringify([1, 2, 3, { nested: 'yes' }]))
+      localStorage.setItem('qa_jwt', SAMPLE_JWT)
+      localStorage.setItem('qa_long_text', 'lorem '.repeat(500))
+      localStorage.setItem('qa_counter', '0')
+
+      sessionStorage.setItem('qa_session_id', crypto.randomUUID())
+      sessionStorage.setItem('qa_session_json', JSON.stringify({ step: 3, wizard: 'checkout' }))
+      sessionStorage.setItem('qa_session_counter', '0')
+      log('localStorage (8 keys) + sessionStorage (3 keys) seeded', 'ok')
+    }
+
+    function seedCookies() {
+      document.cookie = 'qa_cookie_plain=hello; path=/; max-age=86400'
+      document.cookie = 'qa_cookie_json=' + encodeURIComponent(JSON.stringify({ theme: 'dark' })) + '; path=/; max-age=86400'
+      document.cookie = 'qa_cookie_session=session-only-value; path=/'
+      log('3 cookies seeded', 'ok')
+    }
+
+    function openDb(name, version, upgrade) {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(name, version)
+        req.onupgradeneeded = () => upgrade(req.result)
+        req.onsuccess = () => resolve(req.result)
+        req.onerror = () => reject(req.error)
+      })
+    }
+
+    async function seedIndexedDb() {
+      // DB 1: two stores with mixed value types
+      const db1 = await openDb('qa-app-db', 1, (db) => {
+        if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' })
+        if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings')
+      })
+      await new Promise((resolve, reject) => {
+        const tx = db1.transaction(['users', 'settings'], 'readwrite')
+        const users = tx.objectStore('users')
+        users.put({ id: 1, name: 'Ada Lovelace', email: 'ada@example.com', roles: ['admin'] })
+        users.put({ id: 2, name: 'Alan Turing', email: 'alan@example.com', roles: ['user'] })
+        users.put({ id: 3, name: 'Grace Hopper', email: 'grace@example.com', active: true })
+        const settings = tx.objectStore('settings')
+        settings.put('dark', 'theme')
+        settings.put(42, 'volume')
+        settings.put(true, 'notifications')
+        settings.put({ nested: { deeply: ['a', 'b'] } }, 'complex')
+        settings.put(new Uint8Array([1, 2, 3, 4]).buffer, 'binary')
+        settings.put(new Blob(['hello blob'], { type: 'text/plain' }), 'blob')
+        tx.oncomplete = resolve
+        tx.onerror = () => reject(tx.error)
+      })
+      db1.close()
+
+      // DB 2: one big store to test pagination (250 records > page size of 100)
+      const db2 = await openDb('qa-big-db', 1, (db) => {
+        if (!db.objectStoreNames.contains('events')) db.createObjectStore('events', { keyPath: 'seq' })
+      })
+      await new Promise((resolve, reject) => {
+        const tx = db2.transaction('events', 'readwrite')
+        const store = tx.objectStore('events')
+        for (let i = 1; i <= 250; i++) {
+          store.put({ seq: i, type: i % 2 ? 'click' : 'view', ts: Date.now() + i })
+        }
+        tx.oncomplete = resolve
+        tx.onerror = () => reject(tx.error)
+      })
+      db2.close()
+      log('IndexedDB seeded: qa-app-db (users, settings) + qa-big-db (250 events)', 'ok')
+    }
+
+    async function seedAll() {
+      try {
+        seedWebStorage()
+        seedCookies()
+        await seedIndexedDb()
+        log('ALL STORAGE SEEDED — open StorageLens and verify each tab', 'ok')
+      } catch (e) {
+        log('Seed failed: ' + e, 'err')
+      }
+    }
+
+    async function clearAll() {
+      localStorage.clear()
+      sessionStorage.clear()
+      document.cookie.split(';').forEach((c) => {
+        const name = c.split('=')[0].trim()
+        if (name) document.cookie = name + '=; path=/; max-age=0'
+      })
+      await Promise.all(
+        ['qa-app-db', 'qa-big-db'].map(
+          (name) =>
+            new Promise((resolve) => {
+              const req = indexedDB.deleteDatabase(name)
+              req.onsuccess = req.onerror = req.onblocked = resolve
+            }),
+        ),
+      )
+      log('All QA storage cleared', 'ok')
+    }
+
+    // --- live mutation helpers ---
+    let addedKeys = []
+    function lsAdd() {
+      const key = 'qa_live_' + Date.now()
+      localStorage.setItem(key, JSON.stringify({ created: new Date().toISOString() }))
+      addedKeys.push(key)
+      log('localStorage added: ' + key)
+    }
+    function lsUpdate() {
+      const next = String(Number(localStorage.getItem('qa_counter') || '0') + 1)
+      localStorage.setItem('qa_counter', next)
+      log('localStorage qa_counter → ' + next)
+    }
+    function lsRemove() {
+      const key = addedKeys.pop()
+      if (!key) return log('nothing to remove — add a key first', 'err')
+      localStorage.removeItem(key)
+      log('localStorage removed: ' + key)
+    }
+    function ssAdd() {
+      const key = 'qa_live_ss_' + Date.now()
+      sessionStorage.setItem(key, 'live session value')
+      log('sessionStorage added: ' + key)
+    }
+    function ssUpdate() {
+      const next = String(Number(sessionStorage.getItem('qa_session_counter') || '0') + 1)
+      sessionStorage.setItem('qa_session_counter', next)
+      log('sessionStorage qa_session_counter → ' + next)
+    }
+    function ckAdd() {
+      document.cookie = 'qa_temp=' + Date.now() + '; path=/; max-age=3600'
+      log('cookie qa_temp set')
+    }
+    function ckRemove() {
+      document.cookie = 'qa_temp=; path=/; max-age=0'
+      log('cookie qa_temp expired')
+    }
+    let idbSeq = 1000
+    async function idbAdd() {
+      const db = await openDb('qa-app-db', 1, () => {})
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('users', 'readwrite')
+        idbSeq += 1
+        tx.objectStore('users').put({ id: idbSeq, name: 'Live User ' + idbSeq, live: true })
+        tx.oncomplete = resolve
+        tx.onerror = () => reject(tx.error)
+      })
+      db.close()
+      log('IndexedDB users: added id ' + idbSeq)
+    }
+    async function idbDelete() {
+      if (idbSeq <= 1000) return log('no live IDB records to delete', 'err')
+      const db = await openDb('qa-app-db', 1, () => {})
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('users', 'readwrite')
+        tx.objectStore('users').delete(idbSeq)
+        tx.oncomplete = resolve
+        tx.onerror = () => reject(tx.error)
+      })
+      db.close()
+      log('IndexedDB users: deleted id ' + idbSeq)
+      idbSeq -= 1
+    }
+
+    let autoTimer = null
+    function toggleAuto() {
+      const btn = document.getElementById('auto-toggle')
+      if (autoTimer) {
+        clearInterval(autoTimer)
+        autoTimer = null
+        btn.textContent = 'Start auto-mutate (every 2s)'
+        log('auto-mutate stopped')
+      } else {
+        autoTimer = setInterval(() => {
+          lsUpdate()
+          ssUpdate()
+          ckAdd()
+        }, 2000)
+        btn.textContent = 'Stop auto-mutate'
+        log('auto-mutate started — localStorage, sessionStorage, and a cookie change every 2s')
+      }
+    }
+
+    document.getElementById('seed-all').onclick = seedAll
+    document.getElementById('clear-all').onclick = clearAll
+    document.getElementById('ls-add').onclick = lsAdd
+    document.getElementById('ls-update').onclick = lsUpdate
+    document.getElementById('ls-remove').onclick = lsRemove
+    document.getElementById('ss-add').onclick = ssAdd
+    document.getElementById('ss-update').onclick = ssUpdate
+    document.getElementById('ck-add').onclick = ckAdd
+    document.getElementById('ck-remove').onclick = ckRemove
+    document.getElementById('idb-add').onclick = () => idbAdd().catch((e) => log(String(e), 'err'))
+    document.getElementById('idb-delete').onclick = () => idbDelete().catch((e) => log(String(e), 'err'))
+    document.getElementById('auto-toggle').onclick = toggleAuto
+
+    log('Ready. Click "Seed all storage" to begin.')
+  </script>
+</body>
+</html>

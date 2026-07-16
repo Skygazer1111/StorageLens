@@ -8,6 +8,7 @@
     "build": "npm run icons && tsc --noEmit && vite build",
     "icons": "node scripts/generate-icons.mjs",
     "test": "vitest run",
+    "qa": "node scripts/serve-qa.mjs",
     "package": "npm run build && powershell -NoProfile -Command \"if (Test-Path storagelens.zip) { Remove-Item storagelens.zip }; Compress-Archive -Path dist\\* -DestinationPath storagelens.zip\"",
     "preview": "vite preview",
     "lint": "eslint .",
