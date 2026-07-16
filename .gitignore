@@ -26,3 +26,11 @@ dist-ssr
 *.sw?
 # Added by code-review-graph
 .code-review-graph/
+.cursor/
+.cursorrules
+.cursorignore
+
+AGENTS.md
+CLAUDE.md
+Gemini.md
+QODER.md
