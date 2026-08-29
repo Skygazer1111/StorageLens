@@ -44,7 +44,7 @@ async function invokeInActiveTab<TArgs extends unknown[], TResult>(
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Could not run script in page context: ${message}`)
+    throw new Error(`Could not run script in page context: ${message}`, { cause: error })
   }
 
   const result = results?.[0]
