@@ -5,45 +5,55 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run icons && tsc --noEmit && vite build",
+    "build": "npm run icons && npm run typecheck && vite build",
     "icons": "node scripts/generate-icons.mjs",
     "test": "vitest run",
     "qa": "node scripts/serve-qa.mjs",
     "package": "npm run build && powershell -NoProfile -Command \"if (Test-Path storagelens.zip) { Remove-Item storagelens.zip }; Compress-Archive -Path dist\\* -DestinationPath storagelens.zip\"",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json"
   },
   "dependencies": {
-    "@crxjs/vite-plugin": "^2.7.0",
+    "@crxjs/vite-plugin": "^3.0.0",
     "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-virtual": "^3.14.3",
-    "@uiw/react-json-view": "^2.0.0-alpha.43",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@tanstack/react-virtual": "^3.14.13",
+    "@uiw/react-json-view": "^2.0.0-alpha.44",
+    "@vitejs/plugin-react": "^6.1.2",
     "date-fns": "^4.4.0",
-    "fuse.js": "^7.4.2",
+    "fuse.js": "^7.5.0",
     "jwt-decode": "^4.0.0",
-    "monaco-editor": "^0.55.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "vite": "^8.1.0"
+    "monaco-editor": "^0.57.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vite": "^8.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/chrome": "^0.2.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "autoprefixer": "^10.5.1",
-    "eslint": "^10.5.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/chrome": "^0.3.4",
+    "@types/node": "^24.19.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "postcss": "^8.5.15",
-    "prettier": "^3.8.4",
-    "sharp": "^0.35.2",
-    "tailwindcss": "^3.4.19",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "postcss": "^8.5.29",
+    "prettier": "^3.9.9",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.0",
-    "vitest": "^4.1.9"
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "^3.4.16"
+    }
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   }
 }

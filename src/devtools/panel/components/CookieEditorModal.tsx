@@ -105,7 +105,7 @@ export function CookieEditorModal({
 
   if (!open) return null
 
-  const inputClass = `w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-accent ${
+  const inputClass = `w-full rounded-md border px-3 py-2 text-sm outline-hidden focus:border-accent ${
     isDark
       ? 'border-surface-border bg-surface text-gray-100'
       : 'border-slate-300 bg-white text-slate-900'

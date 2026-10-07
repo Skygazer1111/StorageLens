@@ -37,7 +37,7 @@ function ValueTypeBadge({
   }
 
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${styles[valueType]}`}>
+    <span className={`rounded-sm px-1.5 py-0.5 text-xs font-medium ${styles[valueType]}`}>
       {labels[valueType]}
     </span>
   )

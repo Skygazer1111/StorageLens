@@ -28,7 +28,7 @@ It reads storage in the **page context**, structures values as JSON trees, and a
 
 - **Platform**: Chrome Manifest V3
 - **Core**: React 19, TypeScript 6, Vite 8
-- **UI**: Tailwind CSS 3, `@uiw/react-json-view`, Monaco Editor, `fuse.js`
+- **UI**: Tailwind CSS 4, `@uiw/react-json-view`, Monaco Editor, `fuse.js`
 
 ---
 
@@ -36,10 +36,12 @@ It reads storage in the **page context**, structures values as JSON trees, and a
 
 ### Setup
 
+Use Node.js 22.12+ (22.x), 24.x, or 26+. Node.js 24 LTS is recommended.
+
 ```bash
 git clone <your-repo-url>
 cd StorageLens
-npm install
+npm ci
 npm run dev
 ```
 

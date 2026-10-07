@@ -123,15 +123,15 @@ export function EntryDetail({
             </div>
             <div className="flex flex-wrap gap-2">
               {entry.cookie.secure && (
-                <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-emerald-300">Secure</span>
+                <span className="rounded-sm bg-emerald-500/20 px-2 py-0.5 text-emerald-300">Secure</span>
               )}
               {entry.cookie.httpOnly && (
-                <span className="rounded bg-sky-500/20 px-2 py-0.5 text-sky-300">HttpOnly</span>
+                <span className="rounded-sm bg-sky-500/20 px-2 py-0.5 text-sky-300">HttpOnly</span>
               )}
               {entry.cookie.session && (
-                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-300">Session</span>
+                <span className="rounded-sm bg-amber-500/20 px-2 py-0.5 text-amber-300">Session</span>
               )}
-              <span className="rounded bg-gray-500/20 px-2 py-0.5 text-gray-300">
+              <span className="rounded-sm bg-gray-500/20 px-2 py-0.5 text-gray-300">
                 SameSite: {entry.cookie.sameSite}
               </span>
             </div>

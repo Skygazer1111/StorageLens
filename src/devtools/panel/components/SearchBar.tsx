@@ -22,7 +22,7 @@ export function SearchBar({ query, onChange, matchCount, totalCount, isDark }: S
           value={query}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search keys and values…  (press /)"
-          className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none transition-colors focus:border-accent ${
+          className={`w-full rounded-md border px-3 py-1.5 text-sm outline-hidden transition-colors focus:border-accent ${
             isDark
               ? 'border-surface-border bg-surface-raised text-gray-100 placeholder:text-gray-500'
               : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400'

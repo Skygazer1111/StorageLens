@@ -99,7 +99,7 @@ export function PopupApp() {
 
             <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
               Inspect localStorage, sessionStorage, cookies, and IndexedDB on the active tab. DevTools
-              panel: <kbd className="rounded bg-black/20 px-1">F12</kbd> → StorageLens.
+              panel: <kbd className="rounded-sm bg-black/20 px-1">F12</kbd> → StorageLens.
             </p>
 
             <button

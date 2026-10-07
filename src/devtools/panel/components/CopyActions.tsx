@@ -22,7 +22,7 @@ export function CopyActions({ keyName, value, jsonPath, isDark }: CopyActionsPro
     }
   }
 
-  const buttonClass = `rounded border px-2 py-1 text-xs transition-colors ${
+  const buttonClass = `rounded-sm border px-2 py-1 text-xs transition-colors ${
     isDark
       ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
       : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'

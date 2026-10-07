@@ -1,0 +1,7 @@
+[mcp_servers.code-review-graph]
+command = 'C:\Users\skyga\pipx\venvs\code-review-graph\Scripts\python.exe'
+args = [
+    "-m",
+    "code_review_graph",
+    "serve",
+]

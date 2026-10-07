@@ -310,7 +310,7 @@ function AppContent() {
       className={`relative flex min-h-screen flex-col ${isDark ? 'bg-surface text-gray-100' : 'bg-slate-50 text-slate-900'}`}
     >
       {extensionSettings && !extensionSettings.enabled && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-xs">
           <div
             className={`max-w-md rounded-xl border p-6 text-center shadow-xl ${
               isDark ? 'border-surface-border bg-surface-raised' : 'border-slate-200 bg-white'

@@ -27,6 +27,9 @@ dist-ssr
 # Added by code-review-graph
 .code-review-graph/
 
+# Local agent skills
+.agents/skills/
+
 .claude/
 .cursor/
 .cursorrules

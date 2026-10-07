@@ -41,7 +41,7 @@ export function JwtPanel({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
+          <span className="rounded-sm bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
             JWT
           </span>
           <button
@@ -67,7 +67,7 @@ export function JwtPanel({
                 <button
                   type="button"
                   onClick={() => void handleCopy('header', decoded.data.header)}
-                  className={`rounded border px-2 py-1 text-xs ${
+                  className={`rounded-sm border px-2 py-1 text-xs ${
                     isDark
                       ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
                       : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
@@ -78,7 +78,7 @@ export function JwtPanel({
                 <button
                   type="button"
                   onClick={() => void handleCopy('payload', decoded.data.payload)}
-                  className={`rounded border px-2 py-1 text-xs ${
+                  className={`rounded-sm border px-2 py-1 text-xs ${
                     isDark
                       ? 'border-surface-border text-gray-300 hover:border-accent hover:text-white'
                       : 'border-slate-300 text-slate-600 hover:border-accent hover:text-slate-900'
@@ -96,7 +96,7 @@ export function JwtPanel({
                   return (
                     <div
                       key={claim}
-                      className={`rounded border px-2 py-1 ${
+                      className={`rounded-sm border px-2 py-1 ${
                         isDark ? 'border-surface-border text-gray-300' : 'border-slate-200 text-slate-600'
                       }`}
                     >
@@ -111,7 +111,7 @@ export function JwtPanel({
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
                   <p className={`mb-1 text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Header</p>
-                  <div className="max-h-44 overflow-auto rounded border border-surface-border/50 p-2">
+                  <div className="max-h-44 overflow-auto rounded-sm border border-surface-border/50 p-2">
                     <JsonTreeView
                       data={decoded.data.header}
                       storageKey={`${storageKey}.jwt.header`}
@@ -122,7 +122,7 @@ export function JwtPanel({
                 </div>
                 <div>
                   <p className={`mb-1 text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Payload</p>
-                  <div className="max-h-44 overflow-auto rounded border border-surface-border/50 p-2">
+                  <div className="max-h-44 overflow-auto rounded-sm border border-surface-border/50 p-2">
                     <JsonTreeView
                       data={decoded.data.payload}
                       storageKey={`${storageKey}.jwt.payload`}

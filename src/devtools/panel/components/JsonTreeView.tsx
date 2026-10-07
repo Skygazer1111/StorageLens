@@ -72,7 +72,7 @@ function HighlightedValue({ value, query }: { value: string; query: string }) {
     <>
       {parts.map((part, index) =>
         part.match ? (
-          <mark key={index} className="rounded bg-accent/40 px-0.5 text-inherit">
+          <mark key={index} className="rounded-sm bg-accent/40 px-0.5 text-inherit">
             {part.text}
           </mark>
         ) : (

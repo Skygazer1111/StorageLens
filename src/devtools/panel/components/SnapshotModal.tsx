@@ -30,7 +30,7 @@ function SectionDiff({
   diff: { added: string[]; removed: string[]; changed: string[] }
 }) {
   return (
-    <div className="rounded border border-surface-border/60 p-2 text-xs">
+    <div className="rounded-sm border border-surface-border/60 p-2 text-xs">
       <p className="mb-1 font-medium">{title}</p>
       <p>
         +{diff.added.length} / -{diff.removed.length} / ~{diff.changed.length}
@@ -78,7 +78,7 @@ export function SnapshotModal({
 
   if (!open) return null
 
-  const inputClass = `w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-accent ${
+  const inputClass = `w-full rounded-md border px-3 py-2 text-sm outline-hidden focus:border-accent ${
     isDark
       ? 'border-surface-border bg-surface text-gray-100'
       : 'border-slate-300 bg-white text-slate-900'
@@ -166,7 +166,7 @@ export function SnapshotModal({
               />
             </div>
 
-            <div className="h-[calc(100%-52px)] overflow-auto rounded border border-surface-border/60">
+            <div className="h-[calc(100%-52px)] overflow-auto rounded-sm border border-surface-border/60">
               {snapshots.length === 0 ? (
                 <p className="p-4 text-sm opacity-70">No snapshots yet.</p>
               ) : (

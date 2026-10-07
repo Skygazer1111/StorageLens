@@ -154,7 +154,7 @@ export function ValueEditorModal({
               value={key}
               disabled={keyDisabled}
               onChange={(event) => setKey(event.target.value)}
-              className={`w-full rounded-md border px-3 py-2 font-mono text-sm outline-none focus:border-accent disabled:opacity-60 ${
+              className={`w-full rounded-md border px-3 py-2 font-mono text-sm outline-hidden focus:border-accent disabled:opacity-60 ${
                 isDark
                   ? 'border-surface-border bg-surface text-gray-100'
                   : 'border-slate-300 bg-white text-slate-900'
